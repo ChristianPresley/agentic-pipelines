@@ -1,0 +1,93 @@
+name: Fuzzing
+
+on:
+  workflow_call:
+    inputs:
+      duration:
+        description: Fuzzing duration per target
+        type: string
+        default: 10m
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: Fuzzing duration per target
+        default: 10m
+
+permissions: {}
+
+jobs:
+  jazzer:
+    name: Jazzer (${{ github.event_name == 'pull_request' && 'regression' || 'fuzzing' }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-java
+      - name: Restore fuzz corpus
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cifuzz-corpus
+          key: jazzer-corpus-${{ github.run_id }}
+          restore-keys: jazzer-corpus-
+      - name: Run Jazzer
+        env:
+          FUZZ_DURATION: ${{ inputs.duration || '5m' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "push" ]; then
+            ./mvnw -B -ntp test -Dtest=GreetingServiceFuzzTest -Dsurefire.failIfNoSpecifiedTests=false
+          else
+            JAZZER_FUZZ=1 ./mvnw -B -ntp test -Dtest=GreetingServiceFuzzTest \
+              -Djazzer.max_duration="${FUZZ_DURATION}" -Dsurefire.failIfNoSpecifiedTests=false
+          fi
+      - name: Collect results
+        if: always()
+        run: |
+          mkdir -p jazzer-out
+          cp -r target/surefire-reports jazzer-out/ 2>/dev/null || true
+          cp -r .cifuzz-corpus jazzer-out/ 2>/dev/null || true
+          find . -maxdepth 2 -name 'crash-*' -exec cp {} jazzer-out/ \; 2>/dev/null || true
+      - name: Upload Jazzer results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jazzer-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: jazzer-out
+
+  summary:
+    name: Fuzzing summary and gate
+    needs: [jazzer]
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: "jazzer-results"
+          path: scan-results
+      - name: Normalize, summarize and gate
+        run: |
+          python3 .github/scripts/security_report.py report --workflow fuzz \
+            --input scan-results --baseline .security/baseline.json \
+            --out findings-out/findings-fuzz.json --fail-on high
+      - name: Upload normalized findings
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: findings-fuzz
+          retention-days: 30
+          path: findings-out
