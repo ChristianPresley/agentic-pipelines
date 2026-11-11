@@ -1,0 +1,177 @@
+name: Pipeline
+
+# Single entry point for build, test and security scanning. The scanner workflows are
+# reusable (workflow_call) and only run from here, so one commit produces one run.
+#   pull_request   fast checks, only for code that changed
+#   push to main   everything above plus DAST and container publish
+#   schedule       nightly full run: mutation testing, DAST and long-form fuzzing
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pipeline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+      lint: ${{ steps.diff.outputs.lint }}
+      full: ${{ steps.diff.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Decide which stages are needed
+        id: diff
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          code=true; lint=true; full=false
+          case "$EVENT_NAME" in
+            schedule|workflow_dispatch) full=true ;;
+            *)
+              files=$(git diff --name-only HEAD^1 HEAD || true)
+              if [ -n "$files" ]; then
+                code=$(echo "$files" | grep -qvE '^(docs/|site/|[^/]+\.md$)' && echo true || echo false)
+                lint=$(echo "$files" | grep -q '^\.github/' && echo true || echo false)
+              fi
+              ;;
+          esac
+          {
+            echo "code=$code"
+            echo "lint=$lint"
+            echo "full=$full"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Pipeline plan"
+            echo
+            echo "| Stage | Runs |"
+            echo "|---|---|"
+            echo "| Build, SAST, SCA, secrets, container, E2E | $code |"
+            echo "| Workflow lint | $lint |"
+            echo "| Nightly extras (mutation, fuzzing) | $full |"
+            echo "| DAST | $([ "$code" = true ] && [ "$EVENT_NAME" != pull_request ] && echo true || echo false) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  lint:
+    name: Workflow lint
+    needs: [plan]
+    if: ${{ needs.plan.outputs.lint == 'true' }}
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/lint.yml
+
+  build:
+    name: CI
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      full: ${{ needs.plan.outputs.full == 'true' }}
+
+  sast:
+    name: SAST
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/sast.yml
+
+  sca:
+    name: SCA
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/sca.yml
+
+  secrets-iac:
+    name: Secrets and IaC
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/secrets-iac.yml
+
+  container:
+    name: Container
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/container.yml
+
+  e2e:
+    name: E2E
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e.yml
+
+  dast:
+    name: DAST
+    needs: [plan]
+    if: ${{ needs.plan.outputs.code == 'true' && github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dast.yml
+
+  fuzz:
+    name: Fuzzing
+    needs: [plan]
+    if: ${{ needs.plan.outputs.full == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/fuzz.yml
+
+  gate:
+    name: Pipeline gate
+    needs: [plan, lint, build, sast, sca, secrets-iac, container, e2e, dast, fuzz]
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Require every stage to have passed or been skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Pipeline gate"
+            echo
+            echo "| Stage | Result |"
+            echo "|---|---|"
+            echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+          bad=$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')
+          if [ -n "$bad" ]; then
+            echo "::error::Pipeline stages did not pass: $bad"
+            exit 1
+          fi
