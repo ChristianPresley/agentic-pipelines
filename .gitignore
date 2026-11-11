@@ -1,0 +1,16 @@
+target/
+*.class
+*.log
+.idea/
+.vscode/
+*.iml
+.jqwik-database
+.DS_Store
+hs_err_pid*
+.scan-input/
+scan-results/
+_site/
+.venv/
+__pycache__/
+*.pyc
+.m2repo/
