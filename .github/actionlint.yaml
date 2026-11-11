@@ -1,0 +1,18 @@
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+paths:
+  .github/workflows/*.lock.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
+      - 'property "workflow_ref" is not defined'
+      - 'unknown permission scope "copilot-requests"'
+      - 'shellcheck reported issue'
+      - 'unexpected key "cache-mode" for "job" section'
+  .github/workflows/**/*.lock.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
+      - 'property "workflow_ref" is not defined'
+      - 'unknown permission scope "copilot-requests"'
+      - 'shellcheck reported issue'
+      - 'unexpected key "cache-mode" for "job" section'
