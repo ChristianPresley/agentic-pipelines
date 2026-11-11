@@ -435,6 +435,7 @@ th[aria-sort="ascending"] .th-sort .icon, th[aria-sort="descending"] .th-sort .i
 .diagram-scroll { background: #ffffff; border-color: var(--border-strong); box-shadow: var(--sh1); overflow: auto; border: 1px solid var(--border-strong); border-radius: var(--r8); padding: var(--s3); }
 .diagram-scroll img { background: #ffffff; max-width: none; height: auto; display: block; }
 .diagram { margin: var(--s4) 0; }
+figure.diagram { min-width: 0; }
 .hotspot:hover, .hotspot:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; background: color-mix(in srgb, var(--focus) 10%, transparent); box-shadow: none; }
 .diagram-note { margin: var(--s2) 0 var(--s3); }
 
