@@ -2,3 +2,4 @@
 target/
 .mvn/
 src/test/
+_site/
