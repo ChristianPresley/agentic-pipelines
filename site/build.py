@@ -1274,6 +1274,14 @@ def build(summary: str | None) -> None:
         target = OUT / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(finish_page(name, content), encoding="utf-8", newline="\n")
+    # Docs pages link to media stored beside them (the Actions run recordings).
+    recordings = DOCS / "actions-recordings"
+    if recordings.is_dir():
+        media_out = OUT / "pipeline" / "actions-recordings"
+        media_out.mkdir(parents=True, exist_ok=True)
+        for media in sorted(recordings.iterdir()):
+            if media.suffix in (".webm", ".png"):
+                shutil.copy2(media, media_out / media.name)
     shutil.copytree(SITE_SRC / "assets", OUT / "assets")
     shutil.copytree(SITE_SRC / "diagrams", OUT / "diagrams")
     (OUT / "assets" / "site-index.js").write_text(search_index(), encoding="utf-8", newline="\n")
