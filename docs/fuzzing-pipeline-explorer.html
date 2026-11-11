@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>CI/CD pipeline explorer</title>
+  <link rel="stylesheet" href="visuals/pipeline-explorer.css">
+  <script src="visuals/pipeline-explorer-fr.js" defer></script>
+  <script src="visuals/pipeline-explorer-locale.js" defer></script>
+  <script src="visuals/pipeline-explorer.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="hero">
+    <div class="wrap hero-layout">
+      <div class="hero-copy">
+        <div class="eyebrow"><svg class="hero-symbol" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><rect x="2" y="9" width="6" height="6" rx="1.5"/><rect x="16" y="2" width="6" height="6" rx="1.5"/><rect x="16" y="16" width="6" height="6" rx="1.5"/><path d="M8 12H12V5H16M12 12V19H16"/></svg><span>CI / CD pipeline guide</span></div>
+        <h1>Follow the pipeline. Check each stage.</h1>
+        <p>Select a graph card to open its side panel. See the tools, checks, inputs, and results for that stage.</p>
+      </div>
+      <div class="header-links">
+        <a href="fuzzing-pipeline-view.md">Pipeline diagrams<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="m6 3 5 5-5 5"/></svg></a>
+        <a href="fuzzing-system-design.md">System design<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="m6 3 5 5-5 5"/></svg></a>
+        <a href="reports/fuzzing-evidence-2026-11-10.md">Test records and maps<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="m6 3 5 5-5 5"/></svg></a>
+      </div>
+    </div>
+  </header>
+  <div class="preferences wrap" data-enhanced>
+    <div class="language-control">
+      <span>Language</span>
+      <button class="language-switch" type="button" role="switch" aria-checked="false" aria-label="Use French" data-language-switch>
+        <span lang="en">English</span><span class="switch-track" aria-hidden="true"></span><span lang="fr">Français</span>
+      </button>
+    </div>
+    <details class="display-settings">
+      <summary>Display settings</summary>
+      <div class="settings-grid">
+        <label for="color-mode">Color theme</label>
+        <select id="color-mode"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+        <label for="contrast-mode">Contrast</label>
+        <select id="contrast-mode"><option value="system">System</option><option value="standard">Standard</option><option value="high">High</option></select>
+        <label class="check-setting"><input id="readable-text" type="checkbox">Readable text</label>
+        <label class="check-setting"><input id="reduce-motion" type="checkbox">Reduce motion</label>
+      </div>
+      <p class="hint">System settings apply by default.</p>
+    </details>
+  </div>
+  <div class="navigation">
+    <nav class="tabs wrap" aria-label="Pipeline areas">
+      <a id="tab-overview" href="#overview" data-tab="overview">Overview</a>
+      <a id="tab-source-build" href="#source-build" data-tab="source-build">Source and build</a>
+      <a id="tab-java" href="#java" data-tab="java">Java tests</a>
+      <a id="tab-api" href="#api" data-tab="api">API tests</a>
+      <a id="tab-workflows" href="#workflows" data-tab="workflows">Workflow tests</a>
+      <a id="tab-evidence" href="#evidence" data-tab="evidence">Test records</a>
+      <a id="tab-gates" href="#gates" data-tab="gates">Quality gates</a>
+      <a id="tab-release" href="#release" data-tab="release">Release</a>
+      <a id="tab-feedback" href="#feedback" data-tab="feedback">Review and reuse</a>
+      <a id="tab-reports" href="#reports" data-tab="reports">Reports</a>
+      <a id="tab-tools" href="#tools" data-tab="tools">Tools and logos</a>
+    </nav>
+  </div>
+  <main id="content" class="wrap" tabindex="-1">
+    <p id="route-status" class="route-status" role="status"></p>
+    <noscript><div class="callout">JavaScript is off. All areas are shown below. The tabs link to these areas. Side panels need JavaScript.</div></noscript>
+    <section id="overview" data-panel>
+      <div class="chips"><span class="badge proposed">Planned fuzz tests</span><span class="badge existing">Current release steps</span><span class="badge warning">Design, not live results</span></div>
+      <h2>The full pipeline</h2>
+      <p class="intro">The top row tests the app and its workflows. The middle row shows the release steps. The next row shows how reviewed inputs become tests. The bottom section shows the seven agents that triage, explain, fix and report.</p>
+      <div class="stats">
+        <button type="button" class="stat" data-stat="groups" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>3 test groups</strong><span>Java, API, and workflow tests in the design</span></button>
+        <button type="button" class="stat" data-stat="checks" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>7 release checks</strong><span>Required scanner workflows for the same commit</span></button>
+        <button type="button" class="stat" data-stat="agents" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>7 agents</strong><span>Triage, review, report, failure analysis, release readiness, release notes and remediation</span></button>
+        <button type="button" class="stat" data-stat="guide" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>Read-only guide</strong><span>This page cannot run jobs or approve a release</span></button>
+      </div>
+      <p class="hint">Select a graph card to open its side panel. On a small screen, scroll the graph sideways. Use Previous card and Next card to inspect other cards.</p>
+      <div class="view-controls" data-enhanced>
+        <button id="stage-list-toggle" class="secondary-button" type="button" aria-pressed="false" aria-controls="stage-list pipeline-graph">List view</button>
+        <p class="hint">Use the diagram for connections. Use the list for stage details.</p>
+      </div>
+      <div id="stage-list" class="stage-list" hidden></div>
+      <div id="pipeline-graph" class="diagram-scroll" tabindex="0" role="region" aria-label="Pipeline graph. Scroll sideways on a small screen.">
+        <div class="diagram">
+          <img src="visuals/pipeline-overview.svg" width="1600" height="2268" alt="Delivery pipeline overview. Planned Java, API, and workflow tests lead to result checks. Current release steps lead to signed packages. Reviewed inputs feed future tests. Seven agentic workflows triage findings, review pull requests, report daily, analyse failures, assess release readiness, write release notes and propose fixes, with declared limits and people deciding.">
+          <a class="hotspot" href="#source-build" data-stage="source" data-box="48 278 170 144" aria-label="Open Source details"></a>
+          <a class="hotspot" href="#source-build" data-stage="build" data-box="250 278 170 144" aria-label="Open Build details"></a>
+          <a class="hotspot" href="#java" data-stage="java" data-box="468 272 328 56" aria-label="Open Java test details"></a>
+          <a class="hotspot" href="#api" data-stage="api" data-box="468 342 328 56" aria-label="Open API test details"></a>
+          <a class="hotspot" href="#workflows" data-stage="workflow" data-box="468 412 328 56" aria-label="Open Workflow test details"></a>
+          <a class="hotspot" href="#evidence" data-stage="collect" data-box="844 278 220 144" aria-label="Open Test record details"></a>
+          <a class="hotspot" href="#gates" data-stage="quality" data-box="1096 278 200 144" aria-label="Open Quality gate details"></a>
+          <a class="hotspot" href="#gates" data-stage="pass" data-box="1328 264 224 98" aria-label="Open Pass details"></a>
+          <a class="hotspot" href="#gates" data-stage="hold" data-box="1328 386 224 98" aria-label="Open Hold details"></a>
+          <a class="hotspot" href="#reports" data-stage="reports" data-box="48 524 1504 96" aria-label="Open Report details"></a>
+          <a class="hotspot" href="#release" data-stage="tag" data-box="48 714 160 150" aria-label="Open Release tag details"></a>
+          <a class="hotspot" href="#release" data-stage="validate-tag" data-box="240 714 160 150" aria-label="Open Tag check details"></a>
+          <a class="hotspot" href="#gates" data-stage="release-gate" data-box="432 714 160 150" aria-label="Open Release gate details"></a>
+          <a class="hotspot" href="#release" data-stage="verify-release" data-box="624 714 160 150" aria-label="Open Release test details"></a>
+          <a class="hotspot" href="#release" data-stage="readiness" data-box="816 714 160 150" aria-label="Open Readiness review details"></a>
+          <a class="hotspot" href="#release" data-stage="approval" data-box="1008 714 160 150" aria-label="Open Approval details"></a>
+          <a class="hotspot" href="#release" data-stage="publish" data-box="1200 714 160 150" aria-label="Open Publish details"></a>
+          <a class="hotspot" href="#release" data-stage="release" data-box="1392 714 160 150" aria-label="Open GitHub Release details"></a>
+          <a class="hotspot" href="#feedback" data-stage="deep" data-box="48 1030 275 80" aria-label="Open Extended test details"></a>
+          <a class="hotspot" href="#evidence" data-stage="finding" data-box="355 1030 275 80" aria-label="Open Checked finding details"></a>
+          <a class="hotspot" href="#feedback" data-stage="review" data-box="662 1030 275 80" aria-label="Open Human review details"></a>
+          <a class="hotspot" href="#feedback" data-stage="corpus" data-box="969 1030 275 80" aria-label="Open Approved test input details"></a>
+          <a class="hotspot" href="#feedback" data-stage="regression" data-box="1276 1030 275 80" aria-label="Open Next test run details"></a>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card"><h3>Build and test tools</h3><div class="product-list" data-products="actions adoptium maven junit spring zap"></div><p>Select a logo or tool name to see where it is used.</p></article>
+        <article class="card"><h3>Result and release tools</h3><div class="product-list" data-products="python github docker copilot"></div><p>The Tools tab lists the stages for each product. Planned stages have a separate label.</p></article>
+      </div>
+      <div class="callout"><strong>Status labels:</strong> Current means the step exists in source files. Planned means the step is not built yet. A measured result has a date. Pass and Hold are example decisions, not live status.</div>
+      <p><a href="visuals/pipeline-overview.svg">Open the full-size graph</a> or read the <a href="reports/fuzzing-summary-2026-11-10.md">summary report</a>.</p>
+      <p><a href="visuals/agentic-vs-legacy.svg">Compare legacy pipelines with agentic workflows</a>. <a href="visuals/agentic-run-guardrails.svg">See how an agent run stays within limits</a>.</p>
+      <div class="next"><a href="#source-build">Start with source and build</a><a href="#tools">Find a product</a></div>
+    </section>
+
+    <section id="source-build" data-panel>
+      <span class="badge existing">Current build</span> <span class="badge proposed">Planned result index</span>
+      <h2>Source and build</h2>
+      <p class="intro">Identify the commit before you read its test results. Build the app with fixed tool versions.</p>
+      <div class="product-list" data-products="actions git adoptium maven"></div>
+      <div class="grid">
+        <article class="card"><h3>Tools</h3><ul><li>GitHub Actions starts jobs for pull requests, pushes, schedules, and manual requests.</li><li>Temurin JDK 21 compiles Java. The Maven wrapper runs the build.</li><li>Maven Enforcer checks build requirements. Action references use fixed commit hashes.</li></ul></article>
+        <article class="card"><h3>Work</h3><ol><li>Select the commit and event.</li><li>Build the app and tests.</li><li>Start a local app for API tests.</li><li>Planned: record tool versions, input hashes, limits, and job identity in one result index.</li></ol></article>
+        <article class="card"><h3>Results</h3><p>The build creates Java classes, a jar, and test files. The planned index links these files to the tested commit.</p><p><strong>Next:</strong> Java, API, and workflow tests.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../pom.xml">Build settings and versions</a></li><li><a href="../.github/actions/setup-java/action.yml">Java setup</a></li><li><a href="../.github/workflows/ci.yml">CI workflow</a></li></ul></article>
+      </div>
+      <div class="callout">A cache can make a build faster. It does not prove that tests ran. Pull requests must not replace approved test inputs.</div>
+      <div class="next"><a href="#java">Next: Java tests</a><a href="#api">API tests</a><a href="#workflows">Workflow tests</a></div>
+    </section>
+
+    <section id="java" data-panel>
+      <span class="badge existing">Current tools</span> <span class="badge proposed">Planned extra checks</span>
+      <h2>Java tests</h2>
+      <p class="intro">Test the greeting service without HTTP. Use fixed inputs, generated strings, and fuzz inputs.</p>
+      <div class="product-list" data-products="adoptium junit jazzer jqwik jacoco pit"></div>
+      <div class="grid">
+        <article class="card"><h3>Tools</h3><ul><li>JUnit and AssertJ check fixed results.</li><li>jqwik 1.10.2 generates strings and records repeatable random seeds.</li><li>Jazzer 0.30.0 runs saved inputs. Fuzz mode searches for new inputs.</li><li>JaCoCo 0.8.16 measures code coverage. PIT 1.30.2 checks whether tests detect changed code.</li></ul></article>
+        <article class="card"><h3>Work</h3><ul><li>The current fuzz target converts UTF-8 bytes to a string. It checks the greeting format and some unsafe characters.</li><li>Property tests check the greeting and the name length.</li><li>Planned: test null inputs, Unicode, and 49/50/51-unit limits.</li><li>Planned: test Java strings that UTF-8 bytes cannot represent.</li></ul></article>
+        <article class="card"><h3>Results</h3><p>JUnit XML, Jazzer results, coverage files, and PIT reports go to the result checks.</p><p>Planned files also record the input hash, actual fuzz duration, run count, and repeat-run results.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../src/main/java/io/github/christianpresley/hello/GreetingService.java">Greeting service</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/GreetingServiceFuzzTest.java">Jazzer target</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/GreetingServicePropertyTest.java">Property tests</a></li><li><a href="../.github/workflows/fuzz.yml">Fuzz workflow</a></li></ul></article>
+      </div>
+      <div class="callout"><strong>Measured on 2026-11-10 UTC:</strong> the sampled push job ran saved tests, although its label said "fuzzing." It did not save its corpus cache. The CI run made 2,000 jqwik checks. That count is not a JUnit method count.</div>
+      <div class="next"><a href="#api">Next: API tests</a><a href="#evidence">Check result files</a></div>
+    </section>
+
+    <section id="api" data-panel>
+      <span class="badge existing">Current API scans</span> <span class="badge proposed">Planned limit tests</span>
+      <h2>API tests</h2>
+      <p class="intro">Send requests through the full app. Check input validation, response codes, JSON, and error messages.</p>
+      <div class="product-list" data-products="spring schemathesis zap docker"></div>
+      <div class="grid">
+        <article class="card"><h3>Tools</h3><ul><li>Schemathesis 4.33.0 reads <code>/v3/api-docs</code> and generates API requests.</li><li>Spring MVC and Jakarta Validation process <code>GET /api/hello?name=</code>.</li><li>MockMvc tests the controller. Container E2E tests send real HTTP requests.</li><li>OWASP ZAP performs separate security scans.</li></ul></article>
+        <article class="card"><h3>Work</h3><ul><li>Check empty names, missing names, and named greetings.</li><li>The controller accepts at most 200 decoded UTF-16 units. The service keeps at most 50 accepted units.</li><li>Planned: test 199, 200, and 201 units.</li><li>Check that responses match OpenAPI. Do not treat unexpected server errors as clean results.</li></ul></article>
+        <article class="card"><h3>Results</h3><p>Schemathesis and ZAP save reports. The Python helper creates <code>findings-dast</code>.</p><p>Planned repeat-run files keep a safe request and response. They do not include secrets.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../.github/workflows/dast.yml">DAST workflow</a></li><li><a href="../src/main/java/io/github/christianpresley/hello/HelloController.java">Controller</a></li><li><a href="../src/main/java/io/github/christianpresley/hello/ApiExceptionHandler.java">Validation error handler</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/HelloApiE2E.java">Container E2E tests</a></li></ul></article>
+      </div>
+      <div class="callout"><strong>Baseline ST103 finding:</strong> the app returned an intended 400 response. OpenAPI listed only 200. The severity gate still passed. Document the 400 response; do not remove validation. The 200-example setting is a limit, not a measured request count.</div>
+      <div class="next"><a href="#workflows">Next: workflow tests</a><a href="#gates">Check the gate rules</a></div>
+    </section>
+
+    <section id="workflows" data-panel>
+      <span class="badge existing">Current static checks</span> <span class="badge proposed">Planned behavior tests</span>
+      <h2>Workflow tests</h2>
+      <p class="intro">Test decisions in repository code. Do not execute changed workflows against production.</p>
+      <div class="product-list" data-products="actions actionlint zizmor ghaw"></div>
+      <div class="grid">
+        <article class="card"><h3>Tools</h3><ul><li>actionlint 1.7.12 checks workflow syntax and expressions.</li><li>zizmor checks workflow security patterns.</li><li>The lint job uses gh-aw v1.2.1 to check generated lock files.</li><li>Planned: an isolated test harness changes inputs and compares expected decisions.</li></ul></article>
+        <article class="card"><h3>Work</h3><ul><li>Change events, input files, job order, and report data.</li><li>Check missing scanners, repeated runs, and wrong commit hashes.</li><li>Use the same decision code as the real workflows.</li><li>Report limits of the harness. It does not test the GitHub scheduler.</li></ul></article>
+      </div>
+      <div class="card table-scroll"><h3>Seven planned test groups</h3><table><thead><tr><th scope="col">Group</th><th scope="col">Inputs</th><th scope="col">Check</th></tr></thead><tbody>
+        <tr><th scope="row">W1 Settings</th><td>YAML, imports, and job links</td><td>Accept valid settings. Reject invalid settings.</td></tr>
+        <tr><th scope="row">W2 Events</th><td>Pull requests, forks, pushes, and tags</td><td>Select the correct mode and trust level.</td></tr>
+        <tr><th scope="row">W3 Job order</th><td>Missing jobs, repeated runs, and result pages</td><td>Do not use missing or old results as a pass.</td></tr>
+        <tr><th scope="row">W4 Reports</th><td>Missing, invalid, large, or repeated files</td><td>Show errors. Do not pass incomplete records.</td></tr>
+        <tr><th scope="row">W5 Finding groups</th><td>Expiry dates, issue state, and failure identity</td><td>Keep different failures separate.</td></tr>
+        <tr><th scope="row">W6 Display</th><td>Markup, control text, and long messages</td><td>Show safe text within set limits.</td></tr>
+        <tr><th scope="row">W7 Release</th><td>Versions, commit hashes, and approvals</td><td>Reject invalid release decisions.</td></tr>
+      </tbody></table></div>
+      <div class="callout">The planned harness must not tag releases or publish packages. Changed lock files stay in a temporary folder.</div>
+      <p><a href="../.github/workflows/lint.yml">Current lint workflow</a> &middot; <a href="fuzzing-system-design.md#3-workflow-fuzzing-what-is-actually-exercised">Full test design</a></p>
+      <div class="next"><a href="#evidence">Next: test records</a></div>
+    </section>
+
+    <section id="evidence" data-panel>
+      <span class="badge existing">Current report parser</span> <span class="badge proposed">Planned record and repeat checks</span>
+      <h2>Test records</h2>
+      <p class="intro">Keep source results separate from findings and decisions. A missing file does not mean that no defect exists.</p>
+      <div class="product-list" data-products="actions python"></div>
+      <div class="grid">
+        <article class="card"><h3>Current tools</h3><ul><li>GitHub Actions saves and downloads result files.</li><li><code>security_report.py</code> reads SARIF, JUnit, ZAP, PMD, and Checkstyle reports.</li><li><code>build_summary.py</code> reads test, coverage, and mutation results.</li><li><code>.security/baseline.json</code> lists accepted findings.</li></ul></article>
+        <article class="card"><h3>Planned checks</h3><ol><li>Check the repository, workflow, commit, event, run, and attempt.</li><li>Check that each required result file exists and is valid.</li><li>Keep the original failed input. Reduce it to a smaller input.</li><li>Repeat the input three times in fresh isolation. Record each result.</li></ol></article>
+        <article class="card"><h3>Results</h3><p>Keep existing schema-1 findings. Add a separate result index. Record missing files, actual run counts, input hashes, and repeat-run results.</p><p>Use SHA-512 to check the integrity of new saved files.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../.github/scripts/security_report.py">Report parser and finding groups</a></li><li><a href="../.github/scripts/build_summary.py">Build summary</a></li><li><a href="../.security/baseline.json">Accepted findings</a></li><li><a href="fuzzing-system-design.md#5-evidence-contract-and-persistence">Record and storage design</a></li></ul></article>
+      </div>
+      <div class="callout">The current parser can warn and continue after some errors. The planned record checks must not report these cases as clean.</div>
+      <div class="next"><a href="#gates">Next: quality gates</a><a href="#reports">Open reports</a></div>
+    </section>
+
+    <section id="gates" data-panel>
+      <span class="badge existing">Current severity and release checks</span> <span class="badge proposed">Planned complete-record gate</span>
+      <h2>Quality gates</h2>
+      <p class="intro">Each gate has a different purpose. A completion signal is not proof that all scanners passed.</p>
+      <div class="product-list" data-products="github actions python"></div>
+      <div class="grid">
+        <article class="card"><h3>Scanner gate: current</h3><p>Compare new findings with the accepted baseline. High and critical findings block the configured scanner gate. Medium findings can remain nonblocking.</p><p><strong>Uses:</strong> the Python parser and baseline file.</p></article>
+        <article class="card"><h3>Completion check: current</h3><p>Security Gate reads main-push run records for the same commit. It starts finding review after scanner completion. It does not require every scanner to pass.</p><p><strong>Uses:</strong> GitHub Actions run records.</p></article>
+        <article class="card"><h3>Release gate: current</h3><p>Require CI, SAST, SCA, Secrets and IaC, Container, DAST, and Fuzzing to pass for the tag commit.</p><p>Also require no open high or critical security findings. Scorecard and Workflow lint are not in this seven-workflow list.</p></article>
+        <article class="card"><h3>Complete and clean gate: planned</h3><p>A pass needs all required records and clean required checks. Missing files, parser errors, wrong commits, and zero selected tests cannot pass.</p><p>Observe the new checks before making them required.</p></article>
+      </div>
+      <div class="callout">A pass permits the next step. It does not approve production. A correctness check can block a defect without calling it a high-severity security finding.</div>
+      <p><a href="../.github/workflows/pipeline.yml">Pipeline gate</a> &middot; <a href="../.github/workflows/release.yml">Release gate</a> &middot; <a href="fuzzing-system-design.md#6-health-defect-and-release-gates">Planned gate rules</a></p>
+      <div class="next"><a href="#release">Next: release</a></div>
+    </section>
+
+    <section id="release" data-panel>
+      <span class="badge existing">Current release steps</span> <span class="badge warning">No app deployment step</span>
+      <h2>Release</h2>
+      <p class="intro">Build, check, approve, and publish packages. This guide cannot start or approve a release.</p>
+      <div class="product-list" data-products="git github actions maven docker copilot"></div>
+      <div class="card table-scroll"><h3>Release stages</h3><table><thead><tr><th scope="col">Stage</th><th scope="col">Tools</th><th scope="col">Work</th></tr></thead><tbody>
+        <tr><th scope="row">1. Tag</th><td>Git, gh CLI, Cut release</td><td>Create a version tag on main. Start Release.</td></tr>
+        <tr><th scope="row">2. Check tag</th><td>Git and tag rules</td><td>Check the version format and main history. Reject an existing release.</td></tr>
+        <tr><th scope="row">3. Gate</th><td>GitHub Actions and issue labels</td><td>Require the seven scanner passes. Block open high and critical findings.</td></tr>
+        <tr><th scope="row">4. Test</th><td>Maven, Docker, SBOM tools</td><td>Build and run container tests in parallel. Save the jar, checksums, and component list.</td></tr>
+        <tr><th scope="row">5. Review</th><td>Copilot and gh-aw</td><td>Ask an agent for a release-readiness issue. The issue is advice.</td></tr>
+        <tr><th scope="row">6. Approve</th><td>GitHub production environment</td><td>Wait for the configured environment rules.</td></tr>
+        <tr><th scope="row">7. Publish</th><td>Buildx, GHCR, GitHub Packages, Cosign</td><td>Publish the image and Maven package. Add signatures and build records.</td></tr>
+        <tr><th scope="row">8. Release</th><td>gh release and notes agent</td><td>Create the GitHub Release. Ask the agent to add release notes.</td></tr>
+      </tbody></table></div>
+      <div class="callout">The readiness issue is not an approval gate. The baseline did not check external reviewer settings. E2E and publication build images separately. This page does not claim that their image hashes match.</div>
+      <p><a href="../.github/workflows/cut-release.yml">Cut release</a> &middot; <a href="../.github/workflows/release.yml">Release</a> &middot; <a href="../.github/workflows/e2e.yml">E2E</a></p>
+      <div class="next"><a href="#feedback">Next: review and reuse</a></div>
+    </section>
+
+    <section id="feedback" data-panel>
+      <span class="badge existing">Current review agents</span> <span class="badge proposed">Planned input approval</span>
+      <h2>Review and reuse</h2>
+      <p class="intro">Turn a checked finding into a reviewed test. Do not turn it into an automatic production change.</p>
+      <div class="product-list" data-products="github copilot actions"></div>
+      <div class="grid">
+        <article class="card"><h3>Current tools</h3><ul><li>Security Finding Triage reads findings and groups issues.</li><li>Daily Security Report reads issues, alerts, and job results.</li><li>Pipeline Failure Analyst reads qualifying CI, E2E, Container, and Release failures.</li><li>gh-aw safe outputs control issue, comment, discussion, and notification writes.</li></ul></article>
+        <article class="card"><h3>Planned work</h3><ol><li>Run extended nightly or manual tests.</li><li>Check the finding. Save and repeat its input.</li><li>Ask a person to review a fix or a time-limited acceptance.</li><li>Add only approved inputs to the test corpus.</li></ol></article>
+        <article class="card"><h3>Results</h3><p>Issues record follow-up work. Planned records also keep repeat-run results and input history.</p><p>Pull requests can read approved inputs. They cannot replace them.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../.github/workflows/security-triage.md">Finding review</a></li><li><a href="../.github/workflows/pipeline-failure-analyst.md">Failure review</a></li><li><a href="../.github/workflows/daily-security-report.md">Daily report</a></li></ul></article>
+      </div>
+      <div class="callout">Accepting a finding does not approve its input for reuse. Agents must treat scanner text as data, not instructions. Fuzzing and DAST are not current Failure Analyst triggers.</div>
+      <div class="next"><a href="#reports">Next: reports</a></div>
+    </section>
+
+    <section id="reports" data-panel>
+      <span class="badge existing">Dated reports available</span> <span class="badge proposed">Planned automatic reports</span>
+      <h2>Reports</h2>
+      <p class="intro">Use the same checked records for summaries, technical reports, and connection maps. This page does not update live results.</p>
+      <div class="product-list" data-products="python github mermaid otel"></div>
+      <div class="grid">
+        <article class="card"><h3>Summary report</h3><p>The baseline records 15 CI test results, 90.91% line coverage, and 17/17 killed PIT mutations.</p><p><span class="badge measured">Measured: 2026-11-10 UTC</span></p><p><a href="reports/fuzzing-summary-2026-11-10.md">Open the summary</a></p></article>
+        <article class="card"><h3>Technical report</h3><p>Read run identity, result links, test counts, and known limits.</p><p>Baseline commit: <code>df252e45946c2e86d15783d460e8ed7cacf4fcdf</code>.</p><p><a href="reports/fuzzing-evidence-2026-11-10.md">Open the technical report</a></p></article>
+        <article class="card"><h3>Other views</h3><p>The original maps remain available. Mermaid source remains editable.</p><p><a href="fuzzing-pipeline-view.md">Pipeline diagrams</a> &middot; <a href="fuzzing-system-design.md">System design</a> &middot; <a href="reports/fuzzing-evidence-2026-11-10.md#3-existing-workflow-connections">Connection maps</a></p></article>
+        <article class="card"><h3>Planned report rules</h3><p>Give each measure a scope, unit, count, date, and source. Show unknown values as unknown, not zero.</p><p>Agents can explain records. They cannot change counts or waive gates. Optional OpenTelemetry export needs a configured endpoint.</p></article>
+      </div>
+      <div class="callout">Open this HTML file in a browser. Keep its local CSS, JavaScript, SVG, and logo files. No build or external service is needed. GitHub's source viewer does not run the page.</div>
+      <div class="next"><a href="#overview">Back to the graph</a><a href="#tools">Find tool use</a></div>
+    </section>
+
+    <section id="tools" data-panel>
+      <span class="badge existing">Local product marks</span> <span class="badge warning">Use is not live status</span>
+      <h2>Tools and logos</h2>
+      <p class="intro">Select a product to see its stages. Each stage states whether it is current or planned.</p>
+      <p class="product-note">Some tools use text labels because this logo set has no approved mark for them. The OWASP mark identifies the ZAP project family.</p>
+      <div id="tool-directory" class="tool-directory"></div>
+      <noscript><p>Tool names and uses are listed in the other areas. The logo use map needs JavaScript.</p></noscript>
+      <p><a href="visuals/product-logos/README.md">Logo sources and license</a></p>
+    </section>
+
+    <details class="terms">
+      <summary>Keyboard help</summary>
+      <ul>
+        <li>Use Tab to move between controls. Use the arrow keys, Home, and End in the area tabs.</li>
+        <li>Press Escape to close a panel. Focus returns to the control that opened it.</li>
+        <li>Use the list view for larger text and a reading order that does not need the graph.</li>
+      </ul>
+    </details>
+    <details class="terms">
+      <summary>Technical terms</summary>
+      <p><a href="french-technical-style.md">French writing and terminology standard</a></p>
+      <dl>
+        <dt>Fuzzing</dt><dd>Test software with many generated or changed inputs.</dd>
+        <dt>Corpus</dt><dd>A set of saved test inputs.</dd>
+        <dt>Seed corpus</dt><dd>The saved inputs used to start a fuzzing campaign.</dd>
+        <dt>Random seed</dt><dd>A value that initializes a pseudo-random generator so its sequence can be reproduced.</dd>
+        <dt>Input</dt><dd>Data given to a test or application. It is not a test result.</dd>
+        <dt>Artifact</dt><dd>A file saved by a build or test job.</dd>
+        <dt>Manifest</dt><dd>An index that identifies result files, tools, inputs, and runs.</dd>
+        <dt>Test record</dt><dd>A set of result files and metadata linked to a test run.</dd>
+        <dt>Data record</dt><dd>One structured entry in a data file.</dd>
+        <dt>Replay</dt><dd>Repeat a test with the same input.</dd>
+        <dt>Rerun</dt><dd>Run a test or workflow again. The inputs are not necessarily the same.</dd>
+        <dt>Shrinking</dt><dd>Reduce an input while keeping the failure, to make the failure easier to investigate.</dd>
+        <dt>Gate</dt><dd>A check that controls the next pipeline step.</dd>
+        <dt>Regression test</dt><dd>A test that checks whether an old defect returns.</dd>
+        <dt>Property-based test</dt><dd>A test that checks a general rule with many generated inputs.</dd>
+        <dt>Mutation test</dt><dd>Change the code and check whether tests detect the change.</dd>
+        <dt>Input mutation</dt><dd>Change test data to generate another input. This does not change application code.</dd>
+        <dt>Code coverage</dt><dd>A measure of which parts of the code ran during tests. It does not prove that the code is correct.</dd>
+        <dt>Finding</dt><dd>A reported anomaly. It still needs review and is not necessarily a confirmed defect.</dd>
+        <dt>Defect</dt><dd>A fault in the software that can cause an incorrect result.</dd>
+        <dt>Severity</dt><dd>A rating of how serious a reported anomaly is.</dd>
+        <dt>Allowlist</dt><dd>An explicit list of accepted exceptions. An entry does not fix the reported problem.</dd>
+        <dt>Time budget</dt><dd>The maximum allowed test duration. It is not the measured duration.</dd>
+        <dt>UTF-16 code unit</dt><dd>A 16-bit value used by Java strings. One visible character can require several code units.</dd>
+        <dt>Workflow</dt><dd>A GitHub Actions automation defined in YAML and triggered by an event.</dd>
+        <dt>Runner</dt><dd>The machine that executes a GitHub Actions job.</dd>
+        <dt>Job</dt><dd>A group of GitHub Actions steps that run on the same runner.</dd>
+        <dt>Pipeline stage</dt><dd>A part of this pipeline that groups related work. It is not necessarily one GitHub Actions step.</dd>
+        <dt>Commit</dt><dd>A saved state of a Git repository, identified by a commit hash.</dd>
+        <dt>Pull request</dt><dd>A request to review and merge changes into another branch.</dd>
+        <dt>Tag</dt><dd>A Git reference that marks a specific commit.</dd>
+        <dt>Published release</dt><dd>A version made available on GitHub, with notes and downloadable files.</dd>
+        <dt>SHA and hash</dt><dd>A value used to identify a commit or check file contents.</dd>
+        <dt>SBOM</dt><dd>A software bill of materials. It lists software components.</dd>
+        <dt>E2E</dt><dd>An end-to-end test. It checks a complete request path.</dd>
+        <dt>CI and CD</dt><dd>Continuous integration and continuous delivery.</dd>
+      </dl>
+    </details>
+  </main>
+  <dialog id="stage-drawer" class="drawer" aria-labelledby="stage-title" aria-describedby="stage-location stage-status stage-summary">
+    <div class="drawer-shell">
+      <div class="drawer-header">
+        <div class="drawer-actions">
+          <button class="language-switch" type="button" role="switch" aria-checked="false" aria-label="Use French" data-language-switch><span lang="en">EN</span><span class="switch-track" aria-hidden="true"></span><span lang="fr">FR</span></button>
+          <button id="close-drawer" class="close-button" type="button">Close panel</button>
+        </div>
+      </div>
+      <div class="drawer-body" id="drawer-body">
+        <p id="stage-location" class="drawer-location"></p>
+        <span id="stage-status" class="badge"></span>
+        <h2 id="stage-title" tabindex="-1"></h2>
+        <p id="stage-summary"></p>
+        <div id="stage-content"></div>
+      </div>
+      <div class="drawer-nav" id="stage-navigation">
+        <button id="previous-stage" class="secondary-button" type="button">Previous card</button>
+        <button id="next-stage" class="secondary-button" type="button">Next card</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="stat-pane" class="stat-pane" aria-labelledby="stat-pane-title" aria-describedby="stat-pane-intro">
+    <div class="drawer-header">
+      <div class="drawer-actions">
+        <button class="language-switch" type="button" role="switch" aria-checked="false" aria-label="Use French" data-language-switch><span lang="en">EN</span><span class="switch-track" aria-hidden="true"></span><span lang="fr">FR</span></button>
+        <button id="close-stat-pane" class="close-button" type="button">Close panel</button>
+      </div>
+    </div>
+    <div class="stat-pane-body" id="stat-pane-body">
+      <h2 id="stat-pane-title" tabindex="-1"></h2>
+      <p id="stat-pane-intro"></p>
+      <ul id="stat-pane-list" class="stat-pane-list"></ul>
+    </div>
+  </dialog>
+  <footer><div class="wrap"><p>Read-only pipeline guide. Short, direct English and French are used. Technical names are kept. No formal language certification is claimed.</p><p>Source files and historical reports keep their original language.</p></div></footer>
+</body>
+</html>
