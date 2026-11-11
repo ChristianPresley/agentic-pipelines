@@ -1,0 +1,198 @@
+name: SCA
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  MAVEN_ARGS: -B -ntp
+  OSV_SCANNER_VERSION: "2.7.1"
+  OSV_SCANNER_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+  TRIVY_VERSION: "v0.76.2"
+
+jobs:
+  osv-scanner:
+    name: OSV-Scanner
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OSV-Scanner (checksum verified)
+        run: |
+          curl -fsSL -o osv-scanner "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  osv-scanner" | sha256sum --check --strict
+          chmod +x osv-scanner
+      - name: Scan lockfiles and manifests
+        run: |
+          mkdir -p osv-out
+          # Exit code 1 means vulnerabilities were found; they are evaluated by the summary gate.
+          ./osv-scanner scan source --recursive --format sarif --output osv-out/osv.sarif . || test $? -eq 1
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('osv-out/osv.sarif') != '' }}
+        with:
+          sarif_file: osv-out/osv.sarif
+          category: osv-scanner
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: osv-scanner-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: osv-out
+
+  trivy-fs:
+    name: Trivy (dependencies, secrets, misconfiguration)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare output directory
+        run: mkdir -p trivy-out
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig,license
+          format: sarif
+          output: trivy-out/trivy-fs.sarif
+          exit-code: "0"
+          trivyignores: .trivyignore
+        env:
+          TRIVY_DISABLE_VEX_NOTICE: "true"
+          TRIVY_OFFLINE_SCAN: "true"
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('trivy-out/trivy-fs.sarif') != '' }}
+        with:
+          sarif_file: trivy-out/trivy-fs.sarif
+          category: trivy-fs
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-fs-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: trivy-out
+
+  dependency-review:
+    name: Dependency review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only, AGPL-3.0-or-later
+          comment-summary-in-pr: never
+
+  sbom:
+    name: SBOM and license inventory
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-java
+      - name: CycloneDX SBOM (Maven)
+        run: ./mvnw -DskipTests cyclonedx:makeAggregateBom
+      - name: Prepare output directory
+        run: mkdir -p sbom-out
+      - name: Syft SBOM (SPDX)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-out/sbom.spdx.json
+          upload-artifact: false
+      - name: License summary
+        run: |
+          mkdir -p sbom-out
+          cp target/bom.json sbom-out/bom.cdx.json
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, collections
+          bom = json.load(open("sbom-out/bom.cdx.json"))
+          counts = collections.Counter()
+          unknown = []
+          for comp in bom.get("components", []):
+              licenses = comp.get("licenses", [])
+              names = sorted({(l.get("license", {}).get("id") or l.get("license", {}).get("name") or l.get("expression") or "unknown") for l in licenses})
+              if not names:
+                  names = ["unknown"]
+                  unknown.append(comp.get("name"))
+              for name in names:
+                  counts[name] += 1
+          print("## SBOM and licenses\n")
+          print(f"{len(bom.get('components', []))} components in the CycloneDX SBOM.\n")
+          print("| License | Components |\n| --- | ---: |")
+          for name, n in counts.most_common(15):
+              print(f"| {name} | {n} |")
+          if unknown:
+              print(f"\n{len(unknown)} component(s) without declared license metadata.")
+          PY
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          retention-days: 90
+          path: sbom-out
+
+  summary:
+    name: SCA summary and gate
+    needs: [osv-scanner, trivy-fs]
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: "{osv-scanner,trivy-fs}-results"
+          path: scan-results
+      - name: Normalize, summarize and gate
+        run: |
+          python3 .github/scripts/security_report.py report --workflow sca \
+            --input scan-results --baseline .security/baseline.json \
+            --out findings-out/findings-sca.json --fail-on high
+      - name: Upload normalized findings
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: findings-sca
+          retention-days: 30
+          path: findings-out
