@@ -1,0 +1,31 @@
+name: Observability (OpenTelemetry)
+
+on:
+  workflow_run:
+    workflows: ["Pipeline", "Scorecard", "Release"]
+    types: [completed]
+    branches: [main, "v*"]
+
+permissions: {}
+
+jobs:
+  export-traces:
+    name: Export workflow traces
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    env:
+      OTLP_ENDPOINT: ${{ secrets.OTLP_ENDPOINT }}
+    steps:
+      - name: Skip when no OTLP endpoint is configured
+        if: ${{ env.OTLP_ENDPOINT == '' }}
+        run: echo "OTLP_ENDPOINT secret not set; trace export skipped." >> "$GITHUB_STEP_SUMMARY"
+      - uses: corentinmusard/otel-cicd-action@4826b79d63662fa91657272e7711420cb6aea543 # v4.2.0
+        if: ${{ env.OTLP_ENDPOINT != '' }}
+        with:
+          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
+          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          runId: ${{ github.event.workflow_run.id }}
