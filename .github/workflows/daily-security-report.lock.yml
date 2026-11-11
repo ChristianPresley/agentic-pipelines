@@ -57,7 +57,7 @@
 name: "Daily Security Report"
 on:
   schedule:
-    - cron: "37 2 * * *"  # Friendly format: daily (scattered)
+    - cron: "51 20 * * *"  # Friendly format: daily (scattered)
   workflow_dispatch:
     inputs:
       aw_context:
