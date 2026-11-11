@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:lang="en" lang="en" width="1600" height="720" viewBox="0 0 1600 720" role="img" aria-labelledby="title description">
+  <title id="title">Reasoning agents with hard limits</title>
+  <desc id="description">Five steps of one agentic workflow run. 1 An event starts the run: a finished or failed Pipeline or Release run, a pull request, a daily schedule or a manual dispatch. Forks are skipped. 2 Scripts prepare the evidence: download and dedupe findings, collect release evidence, validate tag and issue numbers. 3 The agent works in a sandbox: Copilot engine, read-only permissions, allowed network domains, a time limit, and untrusted input treated as data. 4 Safe outputs apply the writes in separate jobs, with a maximum, title prefix, labels and an expiry. 5 People decide: they read the results, review fix pull requests and approve production. A daily Agentic Maintenance workflow closes expired issues and discussions.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1L7 4L1 7" fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <symbol id="i-approval" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="4"/><path d="M2 22V19Q2 13 9 13Q13 13 15 16M15 20L18 23L23 16"/></g></symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6L18.4 18.4"/></g></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L22 7V17L12 22L2 17V7ZM2 7L12 12L22 7M12 12V22"/></g></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7V12L15.5 14"/></g></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6H21M9 12H21M9 18H21M3 6H5M3 12H5M3 18H5"/></g></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2V7M15 2V7M6 7H18V12Q18 17 12 17Q6 17 6 12ZM12 17V22"/></g></symbol>
+    <symbol id="i-script" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M6 10L9.5 13L6 16M12 16H18"/></g></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4Z"/></g></symbol>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; }
+      .heading { font-size: 24px; font-weight: 700; fill: #0f172a; }
+      .label { font-size: 19px; font-weight: 650; fill: #0f172a; }
+      .name { font-size: 17px; font-weight: 700; fill: #0f172a; }
+      .copy { font-size: 16px; fill: #475569; }
+      .small { font-size: 14px; fill: #475569; }
+      .cell { font-size: 15px; fill: #334155; }
+      .cellb { font-size: 15px; font-weight: 700; fill: #0f172a; }
+      .th { font-size: 13px; font-weight: 700; letter-spacing: 1px; fill: #475569; }
+      .chip { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+      .badge { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+      .number { font-size: 13px; font-weight: 700; fill: #64748b; }
+      .card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+      .connector { fill: none; stroke: #64748b; stroke-width: 2; marker-end: url(#arrow); }
+      .secondary { stroke-dasharray: 5 5; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="720" rx="24" fill="#f1f5f9"/>
+  <path d="M24 0H1576Q1600 0 1600 24V150H0V24Q0 0 24 0" fill="#0f172a"/>
+  <text x="48" y="35" fill="#93c5fd" font-size="12" font-weight="700" letter-spacing="2">HOW IT STAYS SAFE  ·  ONE AGENT RUN, STEP BY STEP</text>
+  <text x="48" y="80" fill="#ffffff" font-size="36" font-weight="700">Reasoning agents with hard limits</text>
+  <text x="48" y="115" fill="#cbd5e1" font-size="18">Each agent run follows the same five steps. The limits are declared in the workflow file, not left to the agent.</text>
+  <g transform="translate(1432 44)" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="0" y="12" width="26" height="26" rx="7"/><rect x="50" y="0" width="26" height="26" rx="7"/><rect x="50" y="46" width="26" height="26" rx="7"/><path d="M26 25H38V13H50M38 25V59H50"/></g>
+  <g transform="translate(1530 44)" fill="none" stroke="#e879f9" stroke-width="2" stroke-linejoin="round"><path d="M16 0L20 12L32 16L20 20L16 32L12 20L0 16L12 12Z" transform="translate(0 20)"/></g>
+  <rect x="48.0" y="180" width="272.0" height="342" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <text x="304.0" y="208" class="number" text-anchor="end">01</text>
+  <use href="#i-plug" x="64.0" y="196" width="30" height="30" color="#2563eb"/>
+  <text x="64.0" y="254" class="label">Trigger</text>
+  <text x="64.0" y="278" class="small" fill="#334155">An event starts the run</text>
+  <circle cx="70.0" cy="307" r="3" fill="#2563eb"/>
+  <text x="82.0" y="312" class="small" fill="#1e293b">Pipeline or Release run ends or fails</text>
+  <circle cx="70.0" cy="335" r="3" fill="#2563eb"/>
+  <text x="82.0" y="340" class="small" fill="#1e293b">Pull request opens or updates</text>
+  <circle cx="70.0" cy="363" r="3" fill="#2563eb"/>
+  <text x="82.0" y="368" class="small" fill="#1e293b">Daily schedule</text>
+  <circle cx="70.0" cy="391" r="3" fill="#2563eb"/>
+  <text x="82.0" y="396" class="small" fill="#1e293b">Manual start: remediation,</text>
+  <text x="82.0" y="414" class="small" fill="#1e293b">readiness, notes</text>
+  <circle cx="70.0" cy="437" r="3" fill="#2563eb"/>
+  <text x="82.0" y="442" class="small" fill="#1e293b">Forks and docs-only PRs skipped</text>
+  <path class="connector" d="M324.0 351H352.0"/>
+  <rect x="356.0" y="180" width="272.0" height="342" rx="16" fill="#f0fdfa" stroke="#5eead4" stroke-width="1.5" />
+  <text x="612.0" y="208" class="number" text-anchor="end">02</text>
+  <use href="#i-script" x="372.0" y="196" width="30" height="30" color="#0f766e"/>
+  <text x="372.0" y="254" class="label">Prepare</text>
+  <text x="372.0" y="278" class="small" fill="#334155">Scripts gather the evidence</text>
+  <circle cx="378.0" cy="307" r="3" fill="#0f766e"/>
+  <text x="390.0" y="312" class="small" fill="#1e293b">Download scanner findings</text>
+  <circle cx="378.0" cy="335" r="3" fill="#0f766e"/>
+  <text x="390.0" y="340" class="small" fill="#1e293b">Dedupe against open and closed</text>
+  <text x="390.0" y="358" class="small" fill="#1e293b">issues</text>
+  <circle cx="378.0" cy="381" r="3" fill="#0f766e"/>
+  <text x="390.0" y="386" class="small" fill="#1e293b">Collect commits, runs and open</text>
+  <text x="390.0" y="404" class="small" fill="#1e293b">findings</text>
+  <circle cx="378.0" cy="427" r="3" fill="#0f766e"/>
+  <text x="390.0" y="432" class="small" fill="#1e293b">Validate tag and issue numbers</text>
+  <circle cx="378.0" cy="455" r="3" fill="#0f766e"/>
+  <text x="390.0" y="460" class="small" fill="#1e293b">Warm a Maven cache</text>
+  <text x="390.0" y="478" class="small" fill="#1e293b">(remediation)</text>
+  <path class="connector" d="M632.0 351H660.0"/>
+  <rect x="664.0" y="180" width="272.0" height="342" rx="16" fill="#fdf4ff" stroke="#e879f9" stroke-width="2" />
+  <text x="920.0" y="208" class="number" text-anchor="end">03</text>
+  <use href="#i-spark" x="680.0" y="196" width="30" height="30" color="#86198f"/>
+  <text x="680.0" y="254" class="label">Agent</text>
+  <text x="680.0" y="278" class="small" fill="#334155">The agent reasons in a sandbox</text>
+  <circle cx="686.0" cy="307" r="3" fill="#86198f"/>
+  <text x="698.0" y="312" class="small" fill="#1e293b">Copilot engine, 20 minute limit (30</text>
+  <text x="698.0" y="330" class="small" fill="#1e293b">for remediation)</text>
+  <circle cx="686.0" cy="353" r="3" fill="#86198f"/>
+  <text x="698.0" y="358" class="small" fill="#1e293b">Read-only repository permissions</text>
+  <circle cx="686.0" cy="381" r="3" fill="#86198f"/>
+  <text x="698.0" y="386" class="small" fill="#1e293b">Allowed network domains only</text>
+  <circle cx="686.0" cy="409" r="3" fill="#86198f"/>
+  <text x="698.0" y="414" class="small" fill="#1e293b">Logs, issues and PR text are</text>
+  <text x="698.0" y="432" class="small" fill="#1e293b">untrusted data</text>
+  <circle cx="686.0" cy="455" r="3" fill="#86198f"/>
+  <text x="698.0" y="460" class="small" fill="#1e293b">Nothing to do: it calls no-op</text>
+  <path class="connector" d="M940.0 351H968.0"/>
+  <rect x="972.0" y="180" width="272.0" height="342" rx="16" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5" />
+  <text x="1228.0" y="208" class="number" text-anchor="end">04</text>
+  <use href="#i-box" x="988.0" y="196" width="30" height="30" color="#a16207"/>
+  <text x="988.0" y="254" class="label">Safe outputs</text>
+  <text x="988.0" y="278" class="small" fill="#334155">Separate jobs apply the writes</text>
+  <circle cx="994.0" cy="307" r="3" fill="#a16207"/>
+  <text x="1006.0" y="312" class="small" fill="#1e293b">Issue, comment, discussion, pull</text>
+  <text x="1006.0" y="330" class="small" fill="#1e293b">request or release-notes update</text>
+  <circle cx="994.0" cy="353" r="3" fill="#a16207"/>
+  <text x="1006.0" y="358" class="small" fill="#1e293b">A maximum for each type (1 to 10)</text>
+  <circle cx="994.0" cy="381" r="3" fill="#a16207"/>
+  <text x="1006.0" y="386" class="small" fill="#1e293b">Title prefix and labels</text>
+  <circle cx="994.0" cy="409" r="3" fill="#a16207"/>
+  <text x="1006.0" y="414" class="small" fill="#1e293b">Issues and discussions expire after</text>
+  <text x="1006.0" y="432" class="small" fill="#1e293b">30 days</text>
+  <circle cx="994.0" cy="455" r="3" fill="#a16207"/>
+  <text x="1006.0" y="460" class="small" fill="#1e293b">Slack and Teams notes through</text>
+  <text x="1006.0" y="478" class="small" fill="#1e293b">shared jobs</text>
+  <path class="connector" d="M1248.0 351H1276.0"/>
+  <rect x="1280.0" y="180" width="272.0" height="342" rx="16" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" />
+  <text x="1536.0" y="208" class="number" text-anchor="end">05</text>
+  <use href="#i-approval" x="1296.0" y="196" width="30" height="30" color="#15803d"/>
+  <text x="1296.0" y="254" class="label">People</text>
+  <text x="1296.0" y="278" class="small" fill="#334155">People decide</text>
+  <circle cx="1302.0" cy="307" r="3" fill="#15803d"/>
+  <text x="1314.0" y="312" class="small" fill="#1e293b">Read the issues, comments and</text>
+  <text x="1314.0" y="330" class="small" fill="#1e293b">discussions</text>
+  <circle cx="1302.0" cy="353" r="3" fill="#15803d"/>
+  <text x="1314.0" y="358" class="small" fill="#1e293b">Review and approve the fix pull</text>
+  <text x="1314.0" y="376" class="small" fill="#1e293b">request</text>
+  <circle cx="1302.0" cy="399" r="3" fill="#15803d"/>
+  <text x="1314.0" y="404" class="small" fill="#1e293b">Approve the production</text>
+  <text x="1314.0" y="422" class="small" fill="#1e293b">environment</text>
+  <circle cx="1302.0" cy="445" r="3" fill="#15803d"/>
+  <text x="1314.0" y="450" class="small" fill="#1e293b">Start remediation themselves</text>
+  <circle cx="1302.0" cy="473" r="3" fill="#15803d"/>
+  <text x="1314.0" y="478" class="small" fill="#1e293b">No agent merges, approves or</text>
+  <text x="1314.0" y="496" class="small" fill="#1e293b">releases</text>
+  <rect x="48" y="550" width="936" height="112" rx="14" fill="#fff1f2" stroke="#fda4af" stroke-width="1.5" />
+  <text x="68" y="582" class="heading">An agent cannot</text>
+  <use href="#i-ban" x="68.0" y="598" width="20" height="20" color="#be123c"/>
+  <text x="96.0" y="613" class="cell">Write to the repository directly</text>
+  <use href="#i-ban" x="526.0" y="598" width="20" height="20" color="#be123c"/>
+  <text x="554.0" y="613" class="cell">Create more than its declared maximum</text>
+  <use href="#i-ban" x="68.0" y="628" width="20" height="20" color="#be123c"/>
+  <text x="96.0" y="643" class="cell">Follow instructions found in logs or issues</text>
+  <use href="#i-ban" x="526.0" y="628" width="20" height="20" color="#be123c"/>
+  <text x="554.0" y="643" class="cell">Merge or approve anything</text>
+  <rect x="1008" y="550" width="544" height="52" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <use href="#i-clock" x="1022" y="564" width="24" height="24" color="#475569"/>
+  <text x="1056" y="571" class="cellb">Daily clean-up</text>
+  <text x="1056" y="590" class="small">Agentic Maintenance closes expired issues and discussions every day.</text>
+  <rect x="1008" y="610" width="544" height="52" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <use href="#i-list" x="1022" y="624" width="24" height="24" color="#475569"/>
+  <text x="1056" y="631" class="cellb">Traceable runs</text>
+  <text x="1056" y="650" class="small">OpenTelemetry export is available when an endpoint is configured.</text>
+  <text x="48" y="692" class="small">Source: .github/workflows/*.md, shared/chat-notify.md and agentics-maintenance.yml. Design view, not live results.</text>
+</svg>
