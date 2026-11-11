@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Baseline of accepted findings. Add <Match> entries with a justification comment. -->
+  <Match>
+    <Class name="~.*Test"/>
+  </Match>
+</FindBugsFilter>
