@@ -16,6 +16,7 @@ permissions:
 tools:
   github:
     toolsets: [default, code_security]
+    min-integrity: unapproved
 network: defaults
 observability:
   otlp:
