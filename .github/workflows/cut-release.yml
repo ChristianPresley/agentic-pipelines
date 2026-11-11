@@ -1,0 +1,76 @@
+name: Cut release
+
+# Computes the next semantic version, creates the tag on main, and starts the Release workflow.
+# Pushing a tag by hand (git tag -a vX.Y.Z && git push origin vX.Y.Z) works too.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version component to increment
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      prerelease:
+        description: Optional pre-release suffix (for example rc.1). Leave empty for a stable release.
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Create release tag
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Compute, tag and dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ inputs.bump }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PRERELEASE" ] && ! [[ "$PRERELEASE" =~ ^[0-9A-Za-z.-]+$ ]]; then
+            echo "::error::Invalid pre-release suffix"; exit 1
+          fi
+          last=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | grep -Ev -- '-' | sort -V | tail -n1 || true)
+          last=${last:-v0.0.0}
+          IFS=. read -r major minor patch <<< "${last#v}"
+          case "$BUMP" in
+            major) major=$((major+1)); minor=0; patch=0 ;;
+            minor) minor=$((minor+1)); patch=0 ;;
+            patch) patch=$((patch+1)) ;;
+          esac
+          tag="v${major}.${minor}.${patch}"
+          [ -z "$PRERELEASE" ] || tag="${tag}-${PRERELEASE}"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "::error::Tag $tag already exists"; exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "refs/tags/$tag"
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$tag"
+          {
+            echo "## Tag created"
+            echo
+            echo "- Previous release: \`$last\`"
+            echo "- New tag: \`$tag\` on \`$GITHUB_SHA\`"
+            echo "- The Release workflow was dispatched for this tag. Approve the \`production\` deployment when the gates are green."
+          } >> "$GITHUB_STEP_SUMMARY"
