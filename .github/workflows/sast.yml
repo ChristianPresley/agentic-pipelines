@@ -1,0 +1,151 @@
+name: SAST
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  MAVEN_ARGS: -B -ntp
+  SEMGREP_VERSION: "1.184.0"
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-java
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-extended
+      - name: Build for analysis
+        run: ./mvnw -DskipTests -Dcheckstyle.skip -Dpmd.skip -Dspotbugs.skip -Djacoco.skip=true package
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:java-kotlin
+          output: codeql-sarif
+          upload: ${{ github.event.pull_request.head.repo.fork && 'never' || 'always' }}
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: codeql-sarif
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install Semgrep
+        run: python -m pip install --disable-pip-version-check "semgrep==${SEMGREP_VERSION}"
+      - name: Scan
+        run: |
+          mkdir -p semgrep-out
+          semgrep scan --metrics=off --config p/java --config p/owasp-top-ten --config p/security-audit \
+            --sarif --output semgrep-out/semgrep.sarif src pom.xml Dockerfile .github || true
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          sarif_file: semgrep-out/semgrep.sarif
+          category: semgrep
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: semgrep-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: semgrep-out
+
+  maven-sast:
+    name: SpotBugs, FindSecBugs, PMD, Checkstyle
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-java
+      - name: Run analyzers in report mode
+        run: ./mvnw -DskipTests compile spotbugs:spotbugs pmd:pmd checkstyle:checkstyle
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('target/spotbugsSarif.json') != '' }}
+        with:
+          sarif_file: target/spotbugsSarif.json
+          category: spotbugs-findsecbugs
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: maven-sast-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            target/spotbugsSarif.json
+            target/spotbugsXml.xml
+            target/pmd.xml
+            target/checkstyle-result.xml
+
+  summary:
+    name: SAST summary and gate
+    needs: [codeql, semgrep, maven-sast]
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: "{codeql,semgrep,maven-sast}-results"
+          path: scan-results
+      - name: Normalize, summarize and gate
+        run: |
+          python3 .github/scripts/security_report.py report --workflow sast \
+            --input scan-results --baseline .security/baseline.json \
+            --out findings-out/findings-sast.json --fail-on high
+      - name: Upload normalized findings
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: findings-sast
+          retention-days: 30
+          path: findings-out
