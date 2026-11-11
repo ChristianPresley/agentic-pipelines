@@ -415,7 +415,7 @@ th[aria-sort="ascending"] .th-sort .icon, th[aria-sort="descending"] .th-sort .i
 
 /* Code copy */
 .code-block { position: relative; margin-block: var(--s3); }
-.code-block pre { margin: 0; padding-inline-end: calc(var(--s5) + 56px); }
+.code-block pre { margin: 0; padding-top: calc(var(--s2) + 32px + var(--s1)); padding-inline-end: calc(var(--s5) + 56px); }
 .copy-btn { position: absolute; top: var(--s2); inset-inline-end: var(--s2); min-height: 32px; min-width: 32px; padding: 0 var(--s2); gap: var(--s1); background: var(--surface-raised); font-size: var(--fs-cap); }
 
 /* Charts and figures: redundant encoding (colour + hatch + glyph + direct label) with a table twin. */
