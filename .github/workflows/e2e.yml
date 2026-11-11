@@ -1,0 +1,89 @@
+name: E2E
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref (tag or SHA) to build and test.
+        type: string
+        default: ""
+      version:
+        description: Version stamped into the image and jar (empty keeps the pom version).
+        type: string
+        default: ""
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  MAVEN_ARGS: -B -ntp
+  IMAGE_LOCAL: hello-api:e2e
+
+jobs:
+  e2e:
+    name: End-to-end tests against the container image
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-java
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the image under test
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.IMAGE_LOCAL }}
+          build-args: |
+            VERSION=${{ inputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Start the container and wait for readiness
+        run: |
+          docker run -d --name hello-api -p 8080:8080 "$IMAGE_LOCAL"
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null; then
+              echo "Container is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Container did not become ready"
+          docker logs hello-api
+          exit 1
+      - name: Run the end-to-end suite
+        env:
+          E2E_BASE_URL: http://localhost:8080
+        run: >
+          ./mvnw test-compile failsafe:integration-test failsafe:verify
+          -Dit.test=HelloApiE2E -DfailIfNoSpecifiedTests=false
+      - name: E2E summary
+        if: always()
+        run: |
+          python3 .github/scripts/build_summary.py target
+          {
+            echo
+            echo "### Image under test"
+            echo
+            docker image inspect "$IMAGE_LOCAL" --format '- Size: {{.Size}} bytes{{"\n"}}- Created: {{.Created}}'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Container logs
+        if: failure()
+        run: docker logs hello-api
+      - name: Upload E2E reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-reports
+          retention-days: 30
+          if-no-files-found: warn
+          path: target/failsafe-reports
