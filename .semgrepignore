@@ -1,0 +1,4 @@
+# Paths excluded from Semgrep scans
+target/
+.mvn/
+src/test/

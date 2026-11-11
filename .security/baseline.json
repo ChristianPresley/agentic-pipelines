@@ -1,0 +1,4 @@
+{
+  "$comment": "Accepted findings. Each entry needs a reason and should have an expiry. Match by fingerprint, or by tool + rule_id (+ optional path glob).",
+  "suppressions": []
+}
