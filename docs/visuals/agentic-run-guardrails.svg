@@ -72,7 +72,7 @@
   <circle cx="378.0" cy="427" r="3" fill="#0f766e"/>
   <text x="390.0" y="432" class="small" fill="#1e293b">Validate tag and issue numbers</text>
   <circle cx="378.0" cy="455" r="3" fill="#0f766e"/>
-  <text x="390.0" y="460" class="small" fill="#1e293b">Warm a Maven cache</text>
+  <text x="390.0" y="460" class="small" fill="#1e293b">Warm a NuGet cache</text>
   <text x="390.0" y="478" class="small" fill="#1e293b">(remediation)</text>
   <path class="connector" d="M632.0 351H660.0"/>
   <rect x="664.0" y="180" width="272.0" height="342" rx="16" fill="#fdf4ff" stroke="#e879f9" stroke-width="2" />

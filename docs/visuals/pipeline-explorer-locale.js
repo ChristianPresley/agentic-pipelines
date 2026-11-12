@@ -24,7 +24,7 @@
 
   function isTechnical(text) {
     return /^(?:https?:\/\/|(?:\.{0,2}\/)|[A-Za-z]:\\)\S+$/u.test(text) ||
-      /^[\w./\\-]+\.(?:md|ya?ml|json|xml|java|py|svg|js|css|html|jar)$/iu.test(text) ||
+      /^[\w./\\-]+\.(?:md|ya?ml|json|xml|cs|csproj|py|svg|js|css|html|dll)$/iu.test(text) ||
       /^[a-f\d]{7,}$/iu.test(text) ||
       /^v?\d+(?:\.\d+)+(?:[-+][\w.-]+)?$/u.test(text) ||
       /^[A-Za-z]\w*_\w+$/u.test(text);
