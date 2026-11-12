@@ -2,7 +2,7 @@
 """Normalize scanner output into a common findings format.
 
 Subcommands
-  report  Parse SARIF / PMD / Checkstyle / ZAP / JUnit results, write findings.json,
+  report  Parse SARIF / ZAP / JUnit / TRX results, write findings.json,
           render a Markdown step summary and apply a severity gate with a baseline.
   dedupe  Group findings by tool+rule and drop groups that already have an open issue.
 
@@ -103,37 +103,6 @@ def parse_sarif(path: Path) -> list[dict]:
     return findings
 
 
-def parse_pmd(path: Path) -> list[dict]:
-    findings = []
-    for file_node in parse_xml(path).iter():
-        if not file_node.tag.endswith("file"):
-            continue
-        for violation in file_node:
-            if not violation.tag.endswith("violation"):
-                continue
-            priority = int(violation.get("priority", "3"))
-            severity = "high" if priority <= 2 else "medium" if priority == 3 else "low"
-            findings.append(
-                make_finding("PMD", violation.get("rule", "unknown"), severity, violation.get("rule"),
-                             file_node.get("name"), int(violation.get("beginline", "0")),
-                             (violation.text or "").strip(), violation.get("externalInfoUrl", ""))
-            )
-    return findings
-
-
-def parse_checkstyle(path: Path) -> list[dict]:
-    findings = []
-    for file_node in parse_xml(path).iter("file"):
-        for error in file_node.iter("error"):
-            severity = "medium" if error.get("severity") == "error" else "low"
-            rule_id = (error.get("source") or "checkstyle").rsplit(".", 1)[-1]
-            findings.append(
-                make_finding("Checkstyle", rule_id, severity, rule_id, file_node.get("name"),
-                             int(error.get("line", "0")), error.get("message", ""))
-            )
-    return findings
-
-
 def parse_zap(path: Path) -> list[dict]:
     data = json.loads(path.read_text(encoding="utf-8"))
     risk = {"3": "high", "2": "medium", "1": "low", "0": "info"}
@@ -164,6 +133,16 @@ def parse_junit(path: Path, tool: str, severity: str) -> list[dict]:
     return findings
 
 
+def parse_trx(path: Path, tool: str, severity: str) -> list[dict]:
+    findings = []
+    for result in parse_xml(path).iter():
+        if result.tag.rsplit("}", 1)[-1] != "UnitTestResult" or result.get("outcome") != "Failed":
+            continue
+        name = result.get("testName", "unknown")
+        message = next((n.text or "" for n in result.iter() if n.tag.rsplit("}", 1)[-1] == "Message"), "")
+        findings.append(make_finding(tool, name, severity, name, name, 0, message.strip()))
+    return findings
+
 def collect(inputs: list[str]) -> list[dict]:
     findings: list[dict] = []
     for root in inputs:
@@ -176,18 +155,14 @@ def collect(inputs: list[str]) -> list[dict]:
                 continue
             name = path.name
             try:
-                if name.endswith((".sarif", ".sarif.json")) or name == "spotbugsSarif.json":
+                if name.endswith((".sarif", ".sarif.json")):
                     findings += parse_sarif(path)
-                elif name == "pmd.xml":
-                    findings += parse_pmd(path)
-                elif name == "checkstyle-result.xml":
-                    findings += parse_checkstyle(path)
                 elif name in ("report_json.json", "zap-report.json"):
                     findings += parse_zap(path)
                 elif name.startswith("schemathesis") and name.endswith(".xml"):
                     findings += parse_junit(path, "Schemathesis", "medium")
-                elif name.startswith("TEST-") and name.endswith(".xml") and "jazzer" in str(path).lower():
-                    findings += parse_junit(path, "Jazzer", "high")
+                elif name.endswith(".trx") and "fuzz" in str(path).lower():
+                    findings += parse_trx(path, "Fuzz", "high")
             except (ET.ParseError, json.JSONDecodeError, KeyError, ValueError) as error:
                 print(f"warning: could not parse {path}: {error}", file=sys.stderr)
     unique = {}

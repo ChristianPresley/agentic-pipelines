@@ -1,5 +1,10 @@
 name: E2E
 
+# Hosted runners use Docker. Locally, run the same flow with WSLC (see scripts/e2e-local.ps1):
+#   wslc build -t hello-api:e2e .
+#   wslc run -d --name hello-api -p 8080:8080 hello-api:e2e
+#   $env:E2E_BASE_URL='http://localhost:8080'; dotnet test --filter FullyQualifiedName~HelloApiE2ETests
+
 on:
   workflow_call:
     inputs:
@@ -8,7 +13,7 @@ on:
         type: string
         default: ""
       version:
-        description: Version stamped into the image and jar (empty keeps the pom version).
+        description: Version stamped into the image (empty keeps the Dockerfile default).
         type: string
         default: ""
   workflow_dispatch:
@@ -16,7 +21,8 @@ on:
 permissions: {}
 
 env:
-  MAVEN_ARGS: -B -ntp
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   IMAGE_LOCAL: hello-api:e2e
 
 jobs:
@@ -34,7 +40,7 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
+      - uses: ./.github/actions/setup-dotnet
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build the image under test
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -44,12 +50,12 @@ jobs:
           push: false
           tags: ${{ env.IMAGE_LOCAL }}
           build-args: |
-            VERSION=${{ inputs.version }}
+            VERSION=${{ inputs.version || '1.0.0' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Start the container and wait for readiness
         run: |
-          docker run -d --name hello-api -p 8080:8080 "$IMAGE_LOCAL"
+          docker run -d --name hello-api --cap-drop ALL --security-opt no-new-privileges -p 8080:8080 "$IMAGE_LOCAL"
           for _ in $(seq 1 60); do
             if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null; then
               echo "Container is ready"
@@ -60,16 +66,23 @@ jobs:
           echo "::error::Container did not become ready"
           docker logs hello-api
           exit 1
+      - name: Verify the container runs as a non-root user
+        run: |
+          uid=$(docker inspect --format '{{.Config.User}}' hello-api)
+          echo "Container user: $uid"
+          [ "${uid%%:*}" != "0" ] && [ -n "$uid" ] || { echo "::error::Container runs as root"; exit 1; }
       - name: Run the end-to-end suite
         env:
           E2E_BASE_URL: http://localhost:8080
         run: >
-          ./mvnw test-compile failsafe:integration-test failsafe:verify
-          -Dit.test=HelloApiE2E -DfailIfNoSpecifiedTests=false
+          dotnet test tests/HelloApi.Tests/HelloApi.Tests.csproj -c Release
+          --filter "FullyQualifiedName~HelloApiE2ETests"
+          --results-directory artifacts/e2e-results
+          --logger "trx;LogFileName=e2e.trx"
       - name: E2E summary
         if: always()
         run: |
-          python3 .github/scripts/build_summary.py target
+          python3 .github/scripts/build_summary.py artifacts
           {
             echo
             echo "### Image under test"
@@ -86,4 +99,4 @@ jobs:
           name: e2e-reports
           retention-days: 30
           if-no-files-found: warn
-          path: target/failsafe-reports
+          path: artifacts/e2e-results

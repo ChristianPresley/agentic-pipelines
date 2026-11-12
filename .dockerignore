@@ -1,4 +1,7 @@
-target/
+**/bin/
+**/obj/
+artifacts/
+tests/
 .git/
 .github/
 .idea/

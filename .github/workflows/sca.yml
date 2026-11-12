@@ -7,7 +7,9 @@ on:
 permissions: {}
 
 env:
-  MAVEN_ARGS: -B -ntp
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  CYCLONEDX_VERSION: "6.3.1"
   OSV_SCANNER_VERSION: "2.7.1"
   OSV_SCANNER_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
   TRIVY_VERSION: "v0.76.2"
@@ -124,9 +126,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
-      - name: CycloneDX SBOM (Maven)
-        run: ./mvnw -DskipTests cyclonedx:makeAggregateBom
+      - uses: ./.github/actions/setup-dotnet
+      - name: Vulnerable and deprecated packages
+        run: |
+          dotnet restore HelloApi.slnx
+          dotnet list HelloApi.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+          { echo '## NuGet vulnerability check'; echo; echo '```'; cat vulnerable.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if grep -q 'has the following vulnerable packages' vulnerable.txt; then echo '::warning::Vulnerable NuGet packages found; see the OSV and Trivy gate'; fi
+      - name: CycloneDX SBOM (.NET)
+        run: |
+          dotnet tool install CycloneDX --version "$CYCLONEDX_VERSION" --tool-path .tools
+          .tools/dotnet-CycloneDX HelloApi.slnx -o bom-out -fn bom.json -j
       - name: Prepare output directory
         run: mkdir -p sbom-out
       - name: Syft SBOM (SPDX)
@@ -139,7 +149,7 @@ jobs:
       - name: License summary
         run: |
           mkdir -p sbom-out
-          cp target/bom.json sbom-out/bom.cdx.json
+          cp bom-out/bom.json sbom-out/bom.cdx.json
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json, collections
           bom = json.load(open("sbom-out/bom.cdx.json"))

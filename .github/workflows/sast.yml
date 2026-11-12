@@ -7,7 +7,8 @@ on:
 permissions: {}
 
 env:
-  MAVEN_ARGS: -B -ntp
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   SEMGREP_VERSION: "1.184.0"
 
 jobs:
@@ -26,17 +27,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
+      - uses: ./.github/actions/setup-dotnet
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          languages: java-kotlin
+          languages: csharp
           build-mode: manual
           queries: security-extended
       - name: Build for analysis
-        run: ./mvnw -DskipTests -Dcheckstyle.skip -Dpmd.skip -Dspotbugs.skip -Djacoco.skip=true package
+        run: dotnet build HelloApi.slnx -c Release
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          category: /language:java-kotlin
+          category: /language:csharp
           output: codeql-sarif
           upload: ${{ github.event.pull_request.head.repo.fork && 'never' || 'always' }}
       - name: Upload SARIF artifact
@@ -70,8 +71,8 @@ jobs:
       - name: Scan
         run: |
           mkdir -p semgrep-out
-          semgrep scan --metrics=off --config p/java --config p/owasp-top-ten --config p/security-audit \
-            --sarif --output semgrep-out/semgrep.sarif src pom.xml Dockerfile .github || true
+          semgrep scan --metrics=off --config p/csharp --config p/owasp-top-ten --config p/security-audit \
+            --sarif --output semgrep-out/semgrep.sarif src Directory.Build.props Directory.Packages.props Dockerfile .github || true
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: ${{ !github.event.pull_request.head.repo.fork }}
         with:
@@ -86,8 +87,8 @@ jobs:
           if-no-files-found: warn
           path: semgrep-out
 
-  maven-sast:
-    name: SpotBugs, FindSecBugs, PMD, Checkstyle
+  dotnet-sast:
+    name: Roslyn security analyzers
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -100,30 +101,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
+      - uses: ./.github/actions/setup-dotnet
       - name: Run analyzers in report mode
-        run: ./mvnw -DskipTests compile spotbugs:spotbugs pmd:pmd checkstyle:checkstyle
+        run: |
+          mkdir -p dotnet-sast-out
+          dotnet restore HelloApi.slnx
+          dotnet build HelloApi.slnx --no-restore -c Release \
+            -p:TreatWarningsAsErrors=false -p:AnalysisMode=All \
+            "-p:ErrorLog=${GITHUB_WORKSPACE}/dotnet-sast-out/roslyn.sarif,version=2.1"
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
-        if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('target/spotbugsSarif.json') != '' }}
+        if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('dotnet-sast-out/*.sarif') != '' }}
         with:
-          sarif_file: target/spotbugsSarif.json
-          category: spotbugs-findsecbugs
+          sarif_file: dotnet-sast-out
+          category: roslyn-analyzers
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: maven-sast-results
+          name: dotnet-sast-results
           retention-days: 30
           if-no-files-found: warn
-          path: |
-            target/spotbugsSarif.json
-            target/spotbugsXml.xml
-            target/pmd.xml
-            target/checkstyle-result.xml
-
+          path: dotnet-sast-out
   summary:
     name: SAST summary and gate
-    needs: [codeql, semgrep, maven-sast]
+    needs: [codeql, semgrep, dotnet-sast]
     if: ${{ always() }}
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -135,7 +136,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: "{codeql,semgrep,maven-sast}-results"
+          pattern: "{codeql,semgrep,dotnet-sast}-results"
           path: scan-results
       - name: Normalize, summarize and gate
         run: |

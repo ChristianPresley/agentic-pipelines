@@ -17,9 +17,9 @@ SARIF = {
         ]}},
         "results": [
             {"ruleId": "R1", "message": {"text": "bad"}, "locations": [{"physicalLocation": {
-                "artifactLocation": {"uri": "src/A.java"}, "region": {"startLine": 3}}}]},
+                "artifactLocation": {"uri": "src/A.cs"}, "region": {"startLine": 3}}}]},
             {"ruleId": "R2", "message": {"text": "meh"}, "locations": [{"physicalLocation": {
-                "artifactLocation": {"uri": "src/B.java"}, "region": {"startLine": 7}}}]},
+                "artifactLocation": {"uri": "src/B.cs"}, "region": {"startLine": 7}}}]},
             {"ruleId": "R1", "message": {"text": "hidden"}, "suppressions": [{"kind": "inSource"}]},
         ],
     }],

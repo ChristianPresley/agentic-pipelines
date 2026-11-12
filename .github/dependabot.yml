@@ -7,12 +7,12 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-  - package-ecosystem: maven
+  - package-ecosystem: nuget
     directory: /
     schedule:
       interval: weekly
     groups:
-      maven:
+      nuget:
         patterns: ["*"]
   - package-ecosystem: docker
     directory: /
