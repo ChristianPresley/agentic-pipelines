@@ -58,13 +58,10 @@ flowchart TB
   Harness --> Raw
   Raw --> Verify
   Verify --> Replay
-  Verify --> Normalize
   Replay --> Normalize
   Normalize --> Gate
-  Normalize --> Reports
   Gate --> Reports
   Reports --> Agent
-  Gate --> Review
   Agent --> Review
   Review -. "approved reproducer promotion" .-> Seeds
 ```
