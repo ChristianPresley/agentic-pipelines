@@ -342,6 +342,8 @@ CATEGORIES = {
     "pipeline": ("Build and test", "Compilation et tests"),
     "release": ("Release", "Publication"),
     "cut-release": ("Release", "Publication"),
+    "governance": ("Governance", "Gouvernance"),
+    "agent-audit": ("Governance", "Gouvernance"),
 }
 
 
@@ -595,7 +597,7 @@ def workflows_index(wfs: list[Workflow]) -> str:
     groups: dict[tuple[str, str], list[Workflow]] = {}
     for wf in wfs:
         groups.setdefault(wf.category, []).append(wf)
-    order = ["Build and test", "Security scanners", "Release", "Agentic workflows", "Supporting workflows"]
+    order = ["Build and test", "Security scanners", "Release", "Governance", "Agentic workflows", "Supporting workflows"]
     parts.append(stat_strip(workflow_stats(wfs)))
     parts.append(category_chart(groups, order))
     for cat, items in sorted(groups.items(), key=lambda kv: order.index(kv[0][0]) if kv[0][0] in order else len(order)):
@@ -1117,6 +1119,9 @@ def home_page(wfs: list[Workflow]) -> str:
         ("setup/", "Setup", "Configuration",
          "Secrets, labels, environments and Pages settings.",
          "Secrets, étiquettes, environnements et paramètres de Pages."),
+        ("pipeline/governance/policy-as-code.html", "Governance and audit", "Gouvernance et audit",
+         "Policy as code, a signed audit trail for every agentic run, agent inspection and the path to enterprise scale.",
+         "Politique en tant que code, piste d’audit signée pour chaque exécution agentique, inspection des agents et trajectoire vers l’échelle de l’entreprise."),
         ("pipeline/fuzzing-system-design.html", "System design", "Conception du système",
          "Dual-surface fuzzing design and reports (original language).",
          "Conception du fuzzing à double surface et rapports (langue d’origine)."),

@@ -1,0 +1,89 @@
+# Organisation policy parameters, evaluated by policy/rego with OPA. Edit values here to change
+# what the governance workflow enforces; edit policy/rego only to add or change a rule.
+# Changes to this directory require review by the owners in .github/CODEOWNERS.
+#
+# mode: enforce  failing rules fail the gate
+#       audit    findings are reported but never block (use while rolling the policy out)
+mode: enforce
+
+runners:
+  required: ubuntu-26.04          # every job, safe-outputs job and threat-detection job
+
+engines:
+  allowed: [copilot]
+
+# Models the agents may resolve to at run time ("auto" is the requested alias).
+# Glob patterns. A model outside the list raises a runtime finding in the audit trail.
+models:
+  allowed: ["auto", "claude-sonnet-*", "claude-haiku-*", "gpt-5*", "gpt-6*"]
+  denied: []
+
+actions:
+  require_sha_pin: true           # uses: owner/repo@<40-hex commit>, docker images by @sha256 digest
+  allowed_owners:
+    - actions
+    - anchore
+    - aquasecurity
+    - corentinmusard
+    - docker
+    - github
+    - hadolint
+    - lycheeverse
+    - ossf
+    - sigstore
+    - step-security
+    - zaproxy
+    - zizmorcore
+
+permissions:
+  # Agent and threat-detection jobs may hold these write scopes and nothing else. Every other
+  # write happens in the safe-outputs job after the agent has finished.
+  read_only_jobs: [agent, detection]
+  write_allowed_for_read_only_jobs: [copilot-requests]
+  # Write scopes an agentic workflow may declare in its own frontmatter.
+  frontmatter_write_allowed: [copilot-requests]
+
+triggers:
+  forbidden: [pull_request_target]
+
+network:
+  # Entries allowed in `network.allowed`. Wildcards and bare domains need an exception.
+  allowed_entries: [defaults, dotnet]
+
+tools:
+  forbid_unrestricted_bash: true
+
+safe_outputs:
+  allowed_types:
+    - add_comment
+    - create_discussion
+    - create_issue
+    - create_pull_request
+    - update_release
+    - slack-notify
+    - teams-notify
+  max_per_type: 10
+  require_threat_detection: true
+
+# Token budgets, expressed in AI Credits (AIC), enforced at run time by the gh-aw firewall
+# (`max-ai-credits`, `max-daily-ai-credits`). Policy sets the ceiling a workflow may declare.
+budgets:
+  default:
+    max_ai_credits: 1000
+    max_daily_ai_credits: 5000
+    max_timeout_minutes: 20
+  workflows:
+    security-remediation:
+      max_ai_credits: 2000
+      max_daily_ai_credits: 8000
+      max_timeout_minutes: 30
+
+pipeline_gate:
+  file: .github/workflows/pipeline.yml
+  job: gate
+  # Stages that must be wired into the gate so a skipped or failed one blocks the merge.
+  required_stages: [governance]
+
+waivers:
+  max_days: 90                    # longest allowed validity of one exception
+  required_fields: [id, rule, subject, reason, approved_by, ticket, expires]

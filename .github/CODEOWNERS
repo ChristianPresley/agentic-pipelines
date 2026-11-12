@@ -1,3 +1,8 @@
 * @ChristianPresley
 /.github/ @ChristianPresley
 /.security/ @ChristianPresley
+# Governance: policy-as-code, waivers and the toolkit that evaluates them. Keep owners separate
+# from workflow authors in production (see docs/governance/enterprise-scale.md).
+/policy/ @ChristianPresley
+/scripts/governance/ @ChristianPresley
+/scripts/explain-agentic-workflow.py @ChristianPresley

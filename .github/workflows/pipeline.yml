@@ -48,7 +48,7 @@ jobs:
               files=$(git diff --name-only HEAD^1 HEAD || true)
               if [ -n "$files" ]; then
                 code=$(echo "$files" | grep -qvE '^(docs/|site/|[^/]+\.md$)' && echo true || echo false)
-                lint=$(echo "$files" | grep -q '^\.github/' && echo true || echo false)
+                lint=$(echo "$files" | grep -qE '^(\.github/|scripts/|policy/)' && echo true || echo false)
               fi
               ;;
           esac
@@ -150,9 +150,20 @@ jobs:
       contents: read
     uses: ./.github/workflows/fuzz.yml
 
+  governance:
+    name: Governance
+    needs: [plan]
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/governance.yml
+    with:
+      attest: ${{ github.event_name != 'pull_request' }}
+
   gate:
     name: Pipeline gate
-    needs: [plan, lint, build, sast, sca, secrets-iac, container, e2e, dast, fuzz]
+    needs: [plan, lint, build, sast, sca, secrets-iac, container, e2e, dast, fuzz, governance]
     if: ${{ always() }}
     runs-on: ubuntu-26.04
     timeout-minutes: 5
