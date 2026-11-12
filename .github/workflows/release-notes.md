@@ -10,6 +10,7 @@ on:
 concurrency:
   job-discriminator: ${{ github.event.inputs.tag }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -41,6 +42,9 @@ pre-steps:
       fi
       cat /tmp/gh-aw/release-tag.txt
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   update-release:
     max: 1
 imports:

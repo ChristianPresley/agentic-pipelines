@@ -10,6 +10,7 @@ on:
 concurrency:
   job-discriminator: ${{ github.event.inputs.issue_number }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 30
 permissions:
   contents: read
@@ -56,6 +57,9 @@ pre-steps:
       jq -e '[.labels[].name] | index("security-finding")' /tmp/gh-aw/finding.json > /dev/null
       cat /tmp/gh-aw/finding.json
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-pull-request:
     title-prefix: "[security-fix] "
     labels: [security-fix, automated]

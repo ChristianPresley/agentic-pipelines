@@ -6,6 +6,7 @@ on:
     paths-ignore: ["docs/**", "site/**", "*.md"]
     forks: []
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -25,6 +26,9 @@ observability:
       Authorization: ${{ secrets.OTLP_TOKEN }}
     if-missing: ignore
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   add-comment:
     max: 1
     hide-older-comments: true

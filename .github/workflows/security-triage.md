@@ -7,6 +7,7 @@ on:
     branches: [main]
 if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion != 'cancelled' && github.event.workflow_run.event != 'pull_request') }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -52,6 +53,9 @@ pre-steps:
         --out /tmp/gh-aw/new-groups.json --min-severity medium --limit 10
       cat /tmp/gh-aw/new-groups.json
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-issue:
     title-prefix: "[security] "
     labels: [security-finding, automated]

@@ -10,6 +10,7 @@ on:
 concurrency:
   job-discriminator: ${{ github.event.inputs.tag }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -29,6 +30,9 @@ observability:
       Authorization: ${{ secrets.OTLP_TOKEN }}
     if-missing: ignore
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-issue:
     title-prefix: "[release] "
     labels: [release, automated]

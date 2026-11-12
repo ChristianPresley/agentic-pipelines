@@ -7,6 +7,7 @@ on:
     branches: [main, "v*"]
 if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event != 'pull_request') }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -38,6 +39,9 @@ pre-steps:
         '{run_id:$id, url:$url, workflow:$name, head_sha:$sha, ref:$ref}' > /tmp/gh-aw/failed-run.json
       cat /tmp/gh-aw/failed-run.json
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-issue:
     title-prefix: "[pipeline] "
     labels: [pipeline-failure, automated]
