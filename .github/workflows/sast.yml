@@ -106,9 +106,9 @@ jobs:
         run: |
           mkdir -p dotnet-sast-out
           dotnet restore HelloApi.slnx
-          dotnet build HelloApi.slnx --no-restore -c Release \
+          dotnet build src/HelloApi/HelloApi.csproj --no-restore -c Release \
             -p:TreatWarningsAsErrors=false -p:AnalysisMode=All \
-            "-p:ErrorLog=${GITHUB_WORKSPACE}/dotnet-sast-out/roslyn.sarif,version=2.1"
+            "-p:ErrorLog=${GITHUB_WORKSPACE}/dotnet-sast-out/roslyn.sarif%2cversion=2.1"
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: ${{ !github.event.pull_request.head.repo.fork && hashFiles('dotnet-sast-out/*.sarif') != '' }}
         with:

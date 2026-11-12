@@ -164,7 +164,7 @@ jobs:
           dotnet publish src/HelloApi/HelloApi.csproj --no-build -c Release -p:Version="$VERSION" -o artifacts/publish
           mkdir -p release
           (cd artifacts/publish && zip -qr "$GITHUB_WORKSPACE/release/hello-api-${VERSION}.zip" .)
-          (cd release && sha512sum * > SHA512SUMS)
+          (cd release && sha512sum -- * > SHA512SUMS)
       - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           path: artifacts/publish

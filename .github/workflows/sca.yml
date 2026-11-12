@@ -136,7 +136,7 @@ jobs:
       - name: CycloneDX SBOM (.NET)
         run: |
           dotnet tool install CycloneDX --version "$CYCLONEDX_VERSION" --tool-path .tools
-          .tools/dotnet-CycloneDX HelloApi.slnx -o bom-out -fn bom.json -j
+          .tools/dotnet-CycloneDX HelloApi.slnx -o bom-out -fn bom.json -F Json
       - name: Prepare output directory
         run: mkdir -p sbom-out
       - name: Syft SBOM (SPDX)
