@@ -15,4 +15,11 @@
 #     approved_by: policy-owners
 #     ticket: https://example.invalid/tickets/1234
 #     expires: 2026-12-31
-waivers: []
+waivers:
+  - id: W-TEST-1
+    rule: budget-exceeded
+    subject: security-remediation
+    reason: Temporary test of the approval environment.
+    approved_by: policy-owners
+    ticket: https://example.invalid/tickets/test
+    expires: 2026-12-01

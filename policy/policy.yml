@@ -76,7 +76,7 @@ budgets:
     security-remediation:
       max_ai_credits: 2000
       max_daily_ai_credits: 8000
-      max_timeout_minutes: 30
+      max_timeout_minutes: 25
 
 pipeline_gate:
   file: .github/workflows/pipeline.yml
