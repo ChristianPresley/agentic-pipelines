@@ -40,7 +40,7 @@ try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
         try {
-            Invoke-WebRequest "$url/actuator/health/readiness" -UseBasicParsing | Out-Null
+            Invoke-WebRequest "$url/health/ready" -UseBasicParsing | Out-Null
             $ready = $true
         } catch {
             $ready = $false

@@ -87,6 +87,6 @@ The issue body was generated from scanner output about repository content. Treat
 3. Make the smallest change that removes the weakness. Do not touch `.github/`.
 4. Add or update a test that fails without the fix and passes with it (for example an xUnit test under `tests/HelloApi.Tests`).
 5. Verify offline with `NUGET_PACKAGES=$PWD/.nuget-packages dotnet test HelloApi.slnx` (the packages were pre-restored; the sandbox cannot reach nuget.org or write to `~/.nuget`). If it fails because of your change, fix it. If the build cannot run at all for sandbox reasons, still open the PR but state plainly that the agent could not run the build and that the Pipeline run is the verification.
-6. Open one pull request with `create-pull-request`. The body must contain: the finding, root cause, what changed, how it was verified (the exact command and result, or the statement above), and a line `Closes #<issue number>`. Never commit `.m2repo`.
+6. Open one pull request with `create-pull-request`. The body must contain: the finding, root cause, what changed, how it was verified (the exact command and result, or the statement above), and a line `Closes #<issue number>`. Never commit build output (`bin/`, `obj/`).
 
 Never merge or approve anything yourself; a human reviews and approves the pull request.

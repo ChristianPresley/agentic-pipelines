@@ -1042,7 +1042,7 @@ def release_page() -> str:
 <li><strong>Readiness agent</strong> posts a GO / NO-GO issue while the run waits.</li>
 <li><strong>Approval</strong>: the <code>production</code> environment requires a reviewer and allows only <code>v*</code> tags.</li>
 <li><strong>Publish</strong>: image to GHCR with Cosign keyless signature, SLSA provenance and SBOM attestations. NuGet package to GitHub Packages.</li>
-<li><strong>GitHub Release</strong> with the jar, <code>SHA512SUMS</code> and the SBOM. The release-notes agent then adds Highlights.</li>
+<li><strong>GitHub Release</strong> with the release archive, <code>SHA512SUMS</code> and the SBOM. The release-notes agent then adds Highlights.</li>
 </ol>
 <pre><code>git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z</code></pre>
@@ -1056,7 +1056,7 @@ git push origin vX.Y.Z</code></pre>
 <li><strong>Agent de préparation</strong> : il publie un ticket GO / NO-GO pendant que l’exécution attend.</li>
 <li><strong>Approbation</strong> : l’environnement <code>production</code> exige un relecteur et n’autorise que les tags <code>v*</code>.</li>
 <li><strong>Publication</strong> : image dans GHCR avec signature Cosign sans clé, provenance SLSA et attestations SBOM. Package NuGet dans GitHub Packages.</li>
-<li><strong>Version GitHub</strong> avec le jar, <code>SHA512SUMS</code> et le SBOM. L’agent release-notes ajoute ensuite les Highlights.</li>
+<li><strong>Version GitHub</strong> avec l&rsquo;archive de version, <code>SHA512SUMS</code> et le SBOM. L’agent release-notes ajoute ensuite les Highlights.</li>
 </ol>
 <pre><code>git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z</code></pre>
