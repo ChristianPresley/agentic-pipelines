@@ -12,6 +12,8 @@ concurrency:
 engine: copilot
 runs-on: ubuntu-26.04
 timeout-minutes: 20
+max-ai-credits: 1000
+max-daily-ai-credits: 5000
 permissions:
   contents: read
   copilot-requests: write

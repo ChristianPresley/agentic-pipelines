@@ -69,3 +69,33 @@ jobs:
             echo "::error::Lock files are stale. Run 'gh aw compile' and commit the result."
             exit 1
           }
+
+  governance-toolkit:
+    name: governance toolkit tests and inspection report
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OPA and the Python dependency (hash verified)
+        env:
+          OPA_VERSION: 1.22.3
+          OPA_SHA512: abe19b5abdf950f2fba2cbc2b889fbd598469807f4524830750a86d444e7d210519daad3d724d772bbbc489abf21da7c13e276ebd39ecd8eae3f1e1a422764a5
+        run: |
+          set -euo pipefail
+          curl -fsSL -o opa "https://github.com/open-policy-agent/opa/releases/download/v${OPA_VERSION}/opa_linux_amd64_static"
+          echo "${OPA_SHA512}  opa" | sha512sum --check --strict
+          chmod +x opa
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet --require-hashes --only-binary :all: -r scripts/governance/requirements.txt
+      - name: Policy unit tests
+        run: ./opa test policy/rego
+      - name: Toolkit tests
+        env:
+          OPA: ${{ github.workspace }}/opa
+        run: .venv/bin/python -m unittest discover -s scripts/tests -v
+      - name: Inspection report matches the lock files
+        run: .venv/bin/python scripts/explain-agentic-workflow.py --all --out docs/governance/agent-inspection-reports.md --check

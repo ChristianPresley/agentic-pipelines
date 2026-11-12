@@ -15,7 +15,7 @@ job is the single required status check.
 
 | When | Stages |
 |---|---|
-| Pull request | Plan → lint (only if `.github/` changed), CI build, SAST, SCA + dependency review, secrets/IaC, container, E2E. Docs/site/`*.md`-only changes skip everything but the plan and gate. Runs cancel when superseded. |
+| Pull request | Plan → lint (only if `.github/`, `scripts/` or `policy/` changed), CI build, SAST, SCA + dependency review, secrets/IaC, container, E2E. Docs/site/`*.md`-only changes skip everything but the plan and gate. Runs cancel when superseded. |
 | Push to `main` | Same as a PR plus DAST and the GHCR publish with Cosign. |
 | Nightly / dispatch | Everything plus Stryker.NET mutation testing, dependency freshness and time-boxed fuzzing. |
 | Weekly | OpenSSF Scorecard (`scorecard.yml`). |
@@ -50,6 +50,21 @@ to `findings-<workflow>` artifacts, writes a Markdown step summary, and gates on
 - `release-notes` – after a successful Release run, prepends a Highlights section to the GitHub Release notes.
 - `pipeline-failure-analyst` – on failed Pipeline or Release runs on `main` or tags (not PRs): classifies the
   root cause and opens one deduplicated `pipeline-failure` issue (or comments on the existing one).
+
+## Governance and audit
+
+Governance is an executable pipeline stage, not prose. Details are in [docs/governance](docs/governance/policy-as-code.md).
+
+- `governance.yml` (reusable, deterministic) evaluates OPA/Rego policy in `policy/` against every workflow, the agentic
+  workflows' lock files, token budgets and the pipeline gate. Exceptions live in `policy/waivers.yml`, expire, and need
+  approval in the `governance-exceptions` environment. It is the `governance` stage of the pipeline gate.
+- `agent-audit.yml` records signed, queryable evidence for every agentic run
+  ([audit trail](docs/governance/audit-trail.md)).
+- `scripts/explain-agentic-workflow.py` turns a compiled `*.lock.yml` into a readable report
+  ([agent inspection](docs/governance/agent-inspection.md)).
+- [Enterprise scale](docs/governance/enterprise-scale.md) describes the production topology and rollout.
+
+Run the checks locally: `opa test policy/rego`, then `python -m unittest discover -s scripts/tests`.
 
 ## CI/CD and releases
 

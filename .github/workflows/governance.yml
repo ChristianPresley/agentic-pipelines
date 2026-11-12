@@ -1,0 +1,184 @@
+name: Governance
+
+# Deterministic policy gate (no model involved). Evaluates the organisation's policy-as-code
+# (policy/*.yml parameters, policy/rego rules) against every workflow definition, the agentic
+# workflows' compiled lock files, their token budgets and the pipeline gate, then publishes a
+# machine-readable and a human-readable verdict.
+#
+# Reusable: another repository can call it with `policy-repository` set to a central policy
+# repository, so the policy and the evaluator are owned in one place (see
+# docs/governance/enterprise-scale.md). Exceptions live in policy/waivers.yml with an expiry and
+# pause in the `governance-exceptions` environment until a required reviewer approves them.
+on:
+  workflow_call:
+    inputs:
+      policy-repository:
+        description: "owner/repo holding policy/ and scripts/governance/ (default: this repository)"
+        type: string
+        default: ""
+      policy-ref:
+        description: "Commit SHA, tag or branch of the policy repository; pin to a SHA in production"
+        type: string
+        default: ""
+      mode:
+        description: "Override policy.yml mode: enforce or audit (empty keeps the policy value)"
+        type: string
+        default: ""
+      attest:
+        description: "Sign the verdict with a build provenance style attestation"
+        type: boolean
+        default: false
+    secrets:
+      POLICY_TOKEN:
+        description: "Read-only token for a private policy repository"
+        required: false
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Override policy.yml mode (policy keeps the policy value)"
+        type: choice
+        options: [policy, enforce, audit]
+        default: policy
+      attest:
+        description: "Sign the verdict with an attestation"
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  evaluate:
+    name: Evaluate policy
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      blocking: ${{ steps.verdict.outputs.blocking }}
+      waived: ${{ steps.verdict.outputs.waived }}
+      mode: ${{ steps.verdict.outputs.mode }}
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - name: Check out the repository under evaluation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          persist-credentials: false
+      - name: Check out the central policy repository
+        if: ${{ inputs.policy-repository != '' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ inputs.policy-repository }}
+          ref: ${{ inputs.policy-ref }}
+          token: ${{ secrets.POLICY_TOKEN || github.token }}
+          path: policy-source
+          persist-credentials: false
+      - name: Select policy source
+        id: source
+        env:
+          CENTRAL: ${{ inputs.policy-repository }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CENTRAL" ]; then echo "dir=policy-source" >> "$GITHUB_OUTPUT"; else echo "dir=target" >> "$GITHUB_OUTPUT"; fi
+      - name: Install OPA and the Python dependency (hash verified)
+        env:
+          OPA_VERSION: 1.22.3
+          OPA_SHA512: abe19b5abdf950f2fba2cbc2b889fbd598469807f4524830750a86d444e7d210519daad3d724d772bbbc489abf21da7c13e276ebd39ecd8eae3f1e1a422764a5
+          SOURCE_DIR: ${{ steps.source.outputs.dir }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -o opa "https://github.com/open-policy-agent/opa/releases/download/v${OPA_VERSION}/opa_linux_amd64_static"
+          echo "${OPA_SHA512}  opa" | sha512sum --check --strict
+          chmod +x opa
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet --require-hashes --only-binary :all: -r "${SOURCE_DIR}/scripts/governance/requirements.txt"
+      - name: Run the policy tests
+        env:
+          SOURCE_DIR: ${{ steps.source.outputs.dir }}
+        run: ./opa test "${SOURCE_DIR}/policy/rego"
+      - name: Evaluate policy
+        id: verdict
+        env:
+          SOURCE_DIR: ${{ steps.source.outputs.dir }}
+          MODE_OVERRIDE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          args=(evaluate --root target --policy "${SOURCE_DIR}/policy" --opa ./opa --out-dir governance-out --github-output "$GITHUB_OUTPUT")
+          if [ -n "$MODE_OVERRIDE" ] && [ "$MODE_OVERRIDE" != policy ]; then args+=(--mode "$MODE_OVERRIDE"); fi
+          .venv/bin/python "${SOURCE_DIR}/scripts/governance/govern.py" "${args[@]}"
+          cat governance-out/verdict.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the verdict
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: governance-verdict
+          path: governance-out/
+          retention-days: 90
+          if-no-files-found: error
+
+  approve-waivers:
+    name: Approve policy exceptions
+    needs: [evaluate]
+    if: ${{ needs.evaluate.result == 'success' && needs.evaluate.outputs.waived != '0' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    # Pauses here until a required reviewer of the environment approves. Configure reviewers in
+    # Settings > Environments (see docs/governance/enterprise-scale.md).
+    environment: governance-exceptions
+    permissions: {}
+    steps:
+      - name: Record the approval
+        env:
+          WAIVED: ${{ needs.evaluate.outputs.waived }}
+        run: echo "Approved ${WAIVED} waived violation(s); see the governance-verdict artifact." >> "$GITHUB_STEP_SUMMARY"
+
+  attest:
+    name: Attest verdict
+    needs: [evaluate, approve-waivers]
+    if: ${{ always() && inputs.attest && needs.evaluate.result == 'success' && needs.approve-waivers.result != 'failure' && needs.approve-waivers.result != 'cancelled' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: governance-verdict
+          path: governance-out
+      - name: Attest the evaluated input and verdict
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: governance-out/governance-input.json
+          predicate-type: https://github.com/ChristianPresley/agentic-pipelines/governance-verdict/v1
+          predicate-path: governance-out/verdict.json
+
+  gate:
+    name: Governance gate
+    needs: [evaluate, approve-waivers, attest]
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail on violations, unapproved exceptions or an evaluation error
+        env:
+          EVALUATE: ${{ needs.evaluate.result }}
+          APPROVE: ${{ needs.approve-waivers.result }}
+          ATTEST: ${{ needs.attest.result }}
+          BLOCKING: ${{ needs.evaluate.outputs.blocking }}
+          WAIVED: ${{ needs.evaluate.outputs.waived }}
+          MODE: ${{ needs.evaluate.outputs.mode }}
+        run: |
+          set -euo pipefail
+          if [ "$EVALUATE" != success ]; then echo "::error::Policy evaluation did not complete ($EVALUATE)"; exit 1; fi
+          if [ "$ATTEST" = failure ]; then echo "::error::Attestation failed"; exit 1; fi
+          if [ "$WAIVED" != 0 ] && [ "$APPROVE" != success ]; then echo "::error::Exceptions in force were not approved ($APPROVE)"; exit 1; fi
+          if [ "$BLOCKING" != 0 ]; then
+            if [ "$MODE" = enforce ]; then echo "::error::$BLOCKING blocking policy violation(s)"; exit 1; fi
+            echo "::warning::$BLOCKING violation(s) reported in audit mode"
+          fi
+          echo "Governance gate passed (mode: $MODE, blocking: $BLOCKING, waived: $WAIVED)"

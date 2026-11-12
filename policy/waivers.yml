@@ -1,0 +1,18 @@
+# Time-boxed exceptions to policy/policy.yml. Empty means no exceptions are in force.
+#
+# Each waiver silences one rule for one subject (a workflow file, `file#job`, or an agentic
+# workflow id) until `expires`. Waivers are not self-service:
+#   1. the change needs review from the policy owners (.github/CODEOWNERS), and
+#   2. any run that relies on a waiver pauses in the `governance-exceptions` environment until a
+#      required reviewer approves it.
+# An expired, malformed or unused waiver is itself reported.
+#
+# waivers:
+#   - id: W-2026-001
+#     rule: budget-exceeded
+#     subject: security-remediation
+#     reason: Large refactor batch; needs a higher per-run ceiling for one release.
+#     approved_by: policy-owners
+#     ticket: https://example.invalid/tickets/1234
+#     expires: 2026-12-31
+waivers: []

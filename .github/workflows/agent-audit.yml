@@ -1,0 +1,100 @@
+name: Agent run audit
+
+# Deterministic audit trail for agentic runs (no model involved). After every agentic workflow
+# finishes, this workflow reads the run's artifacts, builds one evidence record (workflow,
+# engine and resolved model, prompt hash, tools used, safe outputs, token usage, outcome),
+# checks it against the runtime policy, signs it with an artifact attestation and publishes a
+# readable run summary. Records are queried with `gh run download`, `gh attestation verify`
+# and `gh aw audit` (see docs/governance/audit-trail.md).
+on:
+  # zizmor: ignore[dangerous-triggers] - read-only audit of same-repository runs; nothing from the triggering run is executed, and artifact content is only parsed as data
+  workflow_run:
+    workflows:
+      - Daily Security Report
+      - Pipeline Failure Analyst
+      - Pull Request Security Reviewer
+      - Release Notes Writer
+      - Release Readiness Review
+      - Security Remediation
+      - Security Finding Triage
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: "Run id to (re)build evidence for, e.g. to backfill a run"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: agent-audit-${{ github.event.workflow_run.id || inputs.run-id }}
+  cancel-in-progress: false
+
+jobs:
+  evidence:
+    name: Record and attest run evidence
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      RUN_ID: ${{ github.event.workflow_run.id || inputs.run-id }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OPA and the Python dependency (hash verified)
+        env:
+          OPA_VERSION: 1.22.3
+          OPA_SHA512: abe19b5abdf950f2fba2cbc2b889fbd598469807f4524830750a86d444e7d210519daad3d724d772bbbc489abf21da7c13e276ebd39ecd8eae3f1e1a422764a5
+        run: |
+          set -euo pipefail
+          curl -fsSL -o opa "https://github.com/open-policy-agent/opa/releases/download/v${OPA_VERSION}/opa_linux_amd64_static"
+          echo "${OPA_SHA512}  opa" | sha512sum --check --strict
+          chmod +x opa
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet --require-hashes --only-binary :all: -r scripts/governance/requirements.txt
+      - name: Collect the run record and its artifacts
+        run: |
+          set -euo pipefail
+          case "$RUN_ID" in ''|*[!0-9]*) echo "::error::run id must be numeric"; exit 1 ;; esac
+          gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}" | jq '{databaseId: .id, attempt: .run_attempt, url: .html_url, workflowName: .name, event: .event, actor: {login: .actor.login}, headSha: .head_sha, headBranch: .head_branch, conclusion: .conclusion, createdAt: .created_at}' > run.json
+          mkdir -p artifacts
+          gh run download "$RUN_ID" --dir artifacts --pattern activation --pattern usage --pattern detection --pattern safe-outputs-items \
+            || echo "::warning::Some artifacts were unavailable (expired or the run did not produce them); evidence will be marked incomplete"
+      - name: Build the evidence record and check runtime policy
+        id: evidence
+        run: |
+          .venv/bin/python scripts/governance/govern.py evidence --run-json run.json --artifacts artifacts --out-dir evidence --policy policy --opa ./opa --github-output "$GITHUB_OUTPUT"
+          cat evidence/evidence.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: agent-run-evidence-${{ env.RUN_ID }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Attest the evidence
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.evidence.outputs.file }}
+          predicate-type: https://github.com/ChristianPresley/agentic-pipelines/agent-run-evidence/v1
+          predicate-path: ${{ steps.evidence.outputs.file }}
+      - name: Fail on runtime policy errors
+        env:
+          POLICY_PASS: ${{ steps.evidence.outputs.policy_pass }}
+        run: |
+          if [ "$POLICY_PASS" != true ]; then
+            echo "::error::The run breached runtime policy; see the evidence summary and file an exception in policy/waivers.yml if justified"
+            exit 1
+          fi
