@@ -17,7 +17,9 @@ on:
 permissions: {}
 
 env:
-  MAVEN_ARGS: -B -ntp
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  STRYKER_VERSION: "5.1.0"
 
 jobs:
   build:
@@ -33,12 +35,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
-      - name: Verify (unit, property, fuzz regression, integration, JaCoCo, Checkstyle, PMD, SpotBugs)
-        run: ./mvnw verify
+      - uses: ./.github/actions/setup-dotnet
+      - name: Restore
+        run: dotnet restore HelloApi.slnx
+      - name: Check formatting and analyzers
+        run: dotnet format HelloApi.slnx --no-restore --verify-no-changes
+      - name: Build (Roslyn analyzers, warnings as errors)
+        run: dotnet build HelloApi.slnx --no-restore -c Release -warnaserror
+      - name: Test (unit, property, fuzz regression, coverage)
+        run: >
+          dotnet test HelloApi.slnx --no-build -c Release
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/test-results
+          --logger "trx;LogFileName=tests.trx"
+      - name: Publish
+        run: dotnet publish src/HelloApi/HelloApi.csproj --no-build -c Release -o artifacts/publish
       - name: Build summary
         if: always()
-        run: python3 .github/scripts/build_summary.py target
+        run: python3 .github/scripts/build_summary.py artifacts
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -47,18 +61,12 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           path: |
-            target/surefire-reports
-            target/failsafe-reports
-            target/site/jacoco
-            target/build-summary.json
-            target/checkstyle-result.xml
-            target/pmd.xml
-            target/spotbugsXml.xml
-            target/spotbugsSarif.json
-            target/*.jar
+            artifacts/test-results
+            artifacts/build-summary.json
+            artifacts/publish
 
   mutation:
-    name: Mutation testing (PIT)
+    name: Mutation testing (Stryker.NET)
     if: ${{ inputs.full }}
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -71,12 +79,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
-      - name: Run PIT
-        run: ./mvnw test-compile org.pitest:pitest-maven:mutationCoverage -Pmutation -Dcheckstyle.skip -Dpmd.skip -Dspotbugs.skip
+      - uses: ./.github/actions/setup-dotnet
+      - name: Install Stryker.NET
+        run: dotnet tool install dotnet-stryker --version "$STRYKER_VERSION" --tool-path .tools
+      - name: Run Stryker.NET
+        run: |
+          cd tests/HelloApi.Tests
+          "$GITHUB_WORKSPACE/.tools/dotnet-stryker" --project HelloApi.csproj \
+            --reporter json --reporter html --output "$GITHUB_WORKSPACE/artifacts/stryker"
       - name: Build summary
         if: always()
-        run: python3 .github/scripts/build_summary.py target
+        run: python3 .github/scripts/build_summary.py artifacts
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -84,8 +97,7 @@ jobs:
           name: mutation-reports
           retention-days: 30
           if-no-files-found: warn
-          path: target/pit-reports
-
+          path: artifacts/stryker
   dependency-updates:
     name: Dependency freshness report
     if: ${{ inputs.full }}
@@ -100,18 +112,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-java
+      - uses: ./.github/actions/setup-dotnet
       - name: Report available updates
         run: |
-          ./mvnw versions:display-dependency-updates versions:display-plugin-updates | tee updates.txt
+          dotnet restore HelloApi.slnx
+          dotnet list HelloApi.slnx package --outdated --include-transitive | tee updates.txt
           {
             echo "## Dependency freshness"
             echo
             echo '```'
-            grep -E '^\[INFO\]   ' updates.txt | head -60 || true
+            grep -E '^   > ' updates.txt | head -60 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
   scripts:
     name: Helper script tests
     runs-on: ubuntu-26.04

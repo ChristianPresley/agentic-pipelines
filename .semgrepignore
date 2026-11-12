@@ -1,5 +1,5 @@
 # Paths excluded from Semgrep scans
-target/
-.mvn/
-src/test/
+bin/
+obj/
+tests/
 _site/
