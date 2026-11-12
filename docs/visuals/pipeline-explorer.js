@@ -3,14 +3,14 @@
     actions: { name: "GitHub Actions", logo: "githubactions", use: "Run jobs and save their result files.", source: "../.github/workflows/ci.yml" },
     github: { name: "GitHub", logo: "github", use: "Store code, issues, packages, and releases.", source: "../.github/workflows/release.yml" },
     git: { name: "Git", logo: "git", use: "Identify commits and create version tags.", source: "../.github/workflows/cut-release.yml" },
-    adoptium: { name: "Temurin JDK 21", logo: "eclipseadoptium", use: "Compile and run the Java app and tests.", source: "../.github/actions/setup-java/action.yml" },
-    maven: { name: "Apache Maven", logo: "apachemaven", use: "Build, test, and publish the Java package.", source: "../pom.xml" },
-    junit: { name: "JUnit 5", logo: "junit5", use: "Run Java tests and write XML results.", source: "../src/test/java/io/github/christianpresley/hello/GreetingServiceTest.java" },
-    jazzer: { name: "Jazzer 0.30.0", use: "Run saved inputs or search for new failing inputs.", source: "../.github/workflows/fuzz.yml" },
-    jqwik: { name: "jqwik 1.10.2", use: "Generate test strings and save random seeds.", source: "../src/test/java/io/github/christianpresley/hello/GreetingServicePropertyTest.java" },
-    jacoco: { name: "JaCoCo 0.8.16", use: "Measure lines and branches reached by tests.", source: "../pom.xml" },
-    pit: { name: "PIT 1.30.2", use: "Change Java code and check whether tests detect the change.", source: "../pom.xml" },
-    spring: { name: "Spring", logo: "spring", use: "Process API requests and validate name inputs.", source: "../src/main/java/io/github/christianpresley/hello/HelloController.java" },
+    dotnet: { name: ".NET SDK 11", logo: "dotnet", use: "Compile and run the C# app and tests.", source: "../.github/actions/setup-dotnet/action.yml" },
+    nuget: { name: "NuGet", use: "Restore, build, test, and publish the NuGet package.", source: "../Directory.Build.props" },
+    xunit: { name: "xUnit", use: "Run .NET tests and write XML results.", source: "../tests/HelloApp.Tests/GreetingServiceTests.cs" },
+    sharpfuzz: { name: "SharpFuzz", use: "Run saved inputs or search for new failing inputs.", source: "../.github/workflows/fuzz.yml" },
+    fscheck: { name: "FsCheck", use: "Generate test strings and save random seeds.", source: "../tests/HelloApp.Tests/GreetingServicePropertyTests.cs" },
+    coverlet: { name: "Coverlet", use: "Measure lines and branches reached by tests.", source: "../Directory.Build.props" },
+    stryker: { name: "Stryker.NET", use: "Change C# code and check whether tests detect the change.", source: "../Directory.Build.props" },
+    aspnet: { name: "ASP.NET Core", use: "Process API requests and validate name inputs.", source: "../src/HelloApp/Program.cs" },
     schemathesis: { name: "Schemathesis 4.33.0", use: "Generate requests from OpenAPI and check responses.", source: "../.github/workflows/dast.yml" },
     zap: { name: "OWASP ZAP", logo: "owasp", use: "Scan the running API for security findings.", source: "../.github/workflows/dast.yml" },
     docker: { name: "Docker", logo: "docker", use: "Build images and run container tests.", source: "../.github/workflows/e2e.yml" },
@@ -41,31 +41,31 @@
       sources: [["../.github/workflows/ci.yml", "CI events"], ["fuzzing-system-design.md#4-scheduling-and-resource-envelope", "Planned run limits"]]
     },
     build: {
-      title: "Build", area: "source-build", phase: "CI", state: "mixed", tools: ["actions", "adoptium", "maven"],
+      title: "Build", area: "source-build", phase: "CI",       state: "mixed", tools: ["actions", "dotnet", "nuget"],
       summary: "Compile the app and tests with fixed tool versions.",
-      input: ["The selected commit and Maven build settings."],
-      actions: ["Set up Temurin JDK 21.", "Build the app with the Maven wrapper.", "Run Maven verification.", "Planned: prepare an isolated workflow test harness."],
-      output: ["Java classes, an app jar, and build reports."],
+            input: ["The selected commit and NuGet build settings."],
+            actions: ["Set up .NET SDK 11.", "Build the app with dotnet build.", "Run dotnet test verification.", "Planned: prepare an isolated workflow test harness."],
+            output: ["C# classes, an app assembly (DLL), and build reports."],
       note: "A cache makes the build faster. It does not prove that tests passed.",
-      sources: [["../pom.xml", "Build settings"], ["../.github/actions/setup-java/action.yml", "Java setup"]]
+            sources: [["../Directory.Build.props", "Build settings"], ["../.github/actions/setup-dotnet/action.yml", ".NET setup"]]
     },
-    java: {
-      title: "Java tests", area: "java", phase: "CI", state: "mixed", tools: ["adoptium", "junit", "jazzer", "jqwik", "jacoco", "pit"],
+          dotnet: {
+            title: ".NET tests", area: "dotnet", phase: "CI", state: "mixed", tools: ["dotnet", "xunit", "sharpfuzz", "fscheck", "coverlet", "stryker"],
       summary: "Test the greeting service without HTTP.",
       input: ["Fixed examples, generated strings, and byte inputs."],
-      actions: ["Check greeting format and safe name output.", "Generate strings with jqwik.", "Run saved Jazzer inputs on pull requests and pushes.", "Use Jazzer fuzz mode on scheduled or manual runs.", "Planned: add stronger Unicode and length checks."],
-      output: ["JUnit results, coverage, mutation results, and normalized fuzz findings."],
-      note: "The sampled push ran saved inputs, not a measured coverage-guided campaign. PIT is not a fuzz input count.",
-      sources: [["../src/test/java/io/github/christianpresley/hello/GreetingServiceFuzzTest.java", "Fuzz target"], ["../.github/workflows/fuzz.yml", "Fuzz workflow"], ["../pom.xml", "Versions and checks"]]
+            actions: ["Check greeting format and safe name output.", "Generate strings with FsCheck.", "Run saved SharpFuzz inputs on pull requests and pushes.", "Use SharpFuzz fuzz mode on scheduled or manual runs.", "Planned: add stronger Unicode and length checks."],
+            output: ["xUnit results, coverage, mutation results, and normalized fuzz findings."],
+            note: "The sampled push ran saved inputs, not a measured coverage-guided campaign. Stryker.NET is not a fuzz input count.",
+            sources: [["../tests/HelloApp.Tests/GreetingServiceFuzzTests.cs", "Fuzz target"], ["../.github/workflows/fuzz.yml", "Fuzz workflow"], ["../Directory.Build.props", "Versions and checks"]]
     },
     api: {
-      title: "API tests", area: "api", phase: "CI", state: "mixed", tools: ["spring", "schemathesis", "zap"],
+      title: "API tests", area: "api", phase: "CI", state: "mixed", tools: ["aspnet", "schemathesis", "zap"],
       summary: "Send requests to the app and check its responses.",
       input: ["The running app and its OpenAPI document."],
       actions: ["Generate requests with Schemathesis.", "Check response codes and JSON against OpenAPI.", "Run separate security scans with ZAP.", "Planned: repeat exact 199/200/201-unit cases."],
-      output: ["Schemathesis JUnit files, ZAP reports, and findings-dast."],
+      output: ["Schemathesis XML files, ZAP reports, and findings-dast."],
       note: "The baseline ST103 finding was an undocumented 400 response. Keep input validation and document the intended response.",
-      sources: [["../.github/workflows/dast.yml", "DAST workflow"], ["../src/main/java/io/github/christianpresley/hello/HelloController.java", "Controller"]]
+      sources: [["../.github/workflows/dast.yml", "DAST workflow"], ["../src/HelloApp/Program.cs", "Endpoint"]]
     },
     workflow: {
       title: "Workflow tests", area: "workflows", phase: "CI", state: "mixed", tools: ["actions", "actionlint", "zizmor", "ghaw"],
@@ -149,10 +149,10 @@
       sources: [["../.github/workflows/release.yml", "Release gate"], ["../.github/workflows/pipeline.yml", "Pipeline gate"]]
     },
     "verify-release": {
-      title: "Test release build", area: "release", phase: "Release", state: "current", tools: ["actions", "adoptium", "maven", "junit", "jacoco", "docker", "sbom"],
+      title: "Test release build", area: "release", phase: "Release", state: "current", tools: ["actions", "dotnet", "nuget", "xunit", "coverlet", "docker", "sbom"],
       summary: "Build the release and test a container in parallel.",
       input: ["A checked tag and passing release gates."],
-      actions: ["Set the release version.", "Run Maven verification.", "Build and test the E2E container.", "Create the jar, SHA512SUMS, and component list."],
+      actions: ["Set the release version.", "Run dotnet test verification.", "Build and test the E2E container.", "Create the app DLL, SHA512SUMS, and component list."],
       output: ["Release assets, test results, and container E2E results."],
       note: "E2E and publication build images separately. Matching image hashes are not guaranteed.",
       sources: [["../.github/workflows/release.yml", "Release build"], ["../.github/workflows/e2e.yml", "E2E tests"]]
@@ -176,11 +176,11 @@
       sources: [["../.github/workflows/release.yml", "Production environment"]]
     },
     publish: {
-      title: "Publish packages", area: "release", phase: "Release", state: "current", tools: ["github", "actions", "docker", "maven", "cosign"],
+      title: "Publish packages", area: "release", phase: "Release", state: "current", tools: ["github", "actions", "docker", "nuget", "cosign"],
       summary: "Publish packages and attach signatures and build records.",
       input: ["The release version, build assets, and environment permission."],
-      actions: ["Build and push the image with Buildx.", "Publish the Maven package to GitHub Packages.", "Sign the image with Cosign.", "Attach build and SBOM attestations."],
-      output: ["GHCR image, Maven package, signatures, and attestations."],
+      actions: ["Build and push the image with Buildx.", "Publish the NuGet package to GitHub Packages.", "Sign the image with Cosign.", "Attach build and SBOM attestations."],
+      output: ["GHCR image, NuGet package, signatures, and attestations."],
       note: "This is package delivery. The repository has no app deployment stage here.",
       sources: [["../.github/workflows/release.yml", "Publish job"]]
     },
@@ -188,22 +188,22 @@
       title: "GitHub Release", area: "release", phase: "Release", state: "current", tools: ["github", "copilot", "ghaw"],
       summary: "Create the release page and ask an agent to improve the notes.",
       input: ["Published packages and release assets."],
-      actions: ["Create the GitHub Release with generated notes.", "Attach the jar, checksums, and SBOM.", "Start the release-notes agent."],
+      actions: ["Create the GitHub Release with generated notes.", "Attach the app DLL, checksums, and SBOM.", "Start the release-notes agent."],
       output: ["A GitHub Release and updated notes."],
       note: "The notes agent runs after an explicit dispatch. It does not approve the release.",
       sources: [["../.github/workflows/release.yml", "Release job"], ["../.github/workflows/release-notes.md", "Notes agent"]]
     },
     deep: {
-      title: "Extended tests", area: "feedback", phase: "Review and reuse", state: "mixed", tools: ["actions", "jazzer", "schemathesis"],
+      title: "Extended tests", area: "feedback", phase: "Review and reuse", state: "mixed", tools: ["actions", "sharpfuzz", "schemathesis"],
       summary: "Run longer tests at set times or by manual request.",
       input: ["Trusted code, approved inputs, and a fixed time limit."],
-      actions: ["Use current Jazzer schedule and manual entry points.", "Planned: run deeper Java, API, and workflow test groups.", "Stop at the set time or case limit."],
+      actions: ["Use current SharpFuzz schedule and manual entry points.", "Planned: run deeper .NET, API, and workflow test groups.", "Stop at the set time or case limit."],
       output: ["New candidate inputs and measured run records."],
       note: "The three-group extended design is planned. These runs must not start a release.",
       sources: [["../.github/workflows/fuzz.yml", "Current fuzz schedule"], ["fuzzing-system-design.md#4-scheduling-and-resource-envelope", "Planned limits"]]
     },
     finding: {
-      title: "Check a finding", area: "evidence", phase: "Review and reuse", state: "planned", tools: ["python", "jazzer", "schemathesis"],
+      title: "Check a finding", area: "evidence", phase: "Review and reuse", state: "planned", tools: ["python", "sharpfuzz", "schemathesis"],
       summary: "Keep enough data to repeat and understand a failure.",
       input: ["A candidate failure and its original input."],
       actions: ["Keep the original failed input.", "Reduce the input without changing the failure.", "Repeat it three times in fresh isolation.", "Record stable and intermittent results separately."],
@@ -230,7 +230,7 @@
       sources: [["fuzzing-system-design.md#5-evidence-contract-and-persistence", "Corpus rules"]]
     },
     regression: {
-      title: "Next test run", area: "feedback", phase: "Review and reuse", state: "mixed", tools: ["actions", "junit", "jazzer", "jqwik"],
+      title: "Next test run", area: "feedback", phase: "Review and reuse", state: "mixed", tools: ["actions", "xunit", "sharpfuzz", "fscheck"],
       summary: "Repeat approved inputs to detect returning defects.",
       input: ["The next code change and reviewed test inputs."],
       actions: ["Run current fixed and generated tests.", "Planned: include each approved failure input.", "Check the same contract with the new code."],
@@ -619,7 +619,7 @@
     groups: {
       title: "3 test groups",
       intro: "Select a group to open its area. Each group also links to its stage details and its workflow.",
-      items: [groupItem("java", "fuzz", "Fuzzing"), groupItem("api", "dast", "DAST"), groupItem("workflow", "lint", "Workflow lint")]
+      items: [groupItem("dotnet", "fuzz", "Fuzzing"), groupItem("api", "dast", "DAST"), groupItem("workflow", "lint", "Workflow lint")]
     },
     checks: {
       title: "7 release checks",
@@ -631,7 +631,7 @@
         checkItem("secrets-iac", "Secrets and IaC", "Gitleaks checks repository history for secrets. Hadolint checks Dockerfile rules."),
         checkItem("container", "Container", "Trivy scans container images."),
         checkItem("dast", "DAST", "Schemathesis and OWASP ZAP test the running API."),
-        checkItem("fuzz", "Fuzzing", "Jazzer runs saved inputs or searches for new failing inputs.")
+        checkItem("fuzz", "Fuzzing", "SharpFuzz runs saved inputs or searches for new failing inputs.")
       ]
     },
     agents: {

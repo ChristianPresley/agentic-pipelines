@@ -10,7 +10,7 @@ The page does not run jobs or approve releases.
 
 Open the HTML file in a browser. GitHub's source viewer does not run its
 controls. No build or external service is needed. Keep the local CSS,
-JavaScript, SVG, logo, and report files with it.
+scripts, SVG, logo, and report files with it.
 
 ### Explorer controls
 
@@ -32,8 +32,8 @@ JavaScript, SVG, logo, and report files with it.
   A skip link goes to the main content. The panel keeps keyboard focus inside
   it while it is open.
 - **Offline and print:** no runtime request goes to an external service. Print
-  includes every static area. With JavaScript off, all static areas remain
-  readable; side panels and language controls need JavaScript.
+  includes every static area.   With scripting off, all static areas remain
+    readable; side panels and language controls need JS.
 
 The design uses principles from the Engagement Composer work: consistent
 spacing, restrained surfaces, semantic color roles, explicit preferences,
@@ -79,7 +79,7 @@ flowchart LR
   Source["1. SOURCE<br/>PR / main / scheduled / manual"]
   Build["2. BUILD<br/>Pin commit, tools and corpus<br/>Compile application and harness"]
   subgraph Tests["3. TEST - parallel jobs"]
-    Java["JAVA<br/>Unit + property + Jazzer"]
+    Dotnet[".NET<br/>Unit + property + SharpFuzz"]
     HTTP["API<br/>Schemathesis + boundaries"]
     Workflow["WORKFLOWS<br/>Config + event + report mutations"]
   end
@@ -89,10 +89,10 @@ flowchart LR
   Hold["HOLD<br/>Defect or incomplete evidence"]
   Report["PUBLISH REPORTS<br/>Summary + technical + connections"]
   Source --> Build
-  Build --> Java
+  Build --> Dotnet
   Build --> HTTP
   Build --> Workflow
-  Java --> Evidence
+  Dotnet --> Evidence
   HTTP --> Evidence
   Workflow --> Evidence
   Evidence --> Gate
@@ -106,7 +106,7 @@ flowchart LR
   classDef pass fill:#dcfce7,stroke:#15803d,color:#14532d
   classDef hold fill:#fee2e2,stroke:#b91c1c,color:#450a0a
   class Source,Build source
-  class Java,HTTP,Workflow test
+  class Dotnet,HTTP,Workflow test
   class Evidence,Report evidence
   class Gate gate
   class Ready pass
@@ -124,8 +124,8 @@ are met.
 | Stage | What runs | Evidence handed to the next stage |
 |---|---|---|
 | 1. Source | Select tested SHA, event, trust tier, campaign budget | Immutable campaign identity |
-| 2. Build | Compile Java; prepare local HTTP app and isolated workflow harness | Tool versions, application digest, reviewed corpus digest |
-| 3. Test | Java, API, and workflow lanes run independently | JUnit, actual case/execution counts, engine logs, candidate inputs |
+| 2. Build | `dotnet build`; prepare local HTTP app (WSLC container) and isolated workflow harness | Tool versions, application digest, reviewed corpus digest |
+| 3. Test | .NET, API, and workflow lanes run independently | xUnit, actual case/execution counts, engine logs, candidate inputs |
 | 4. Collect | Validate producer identity/completeness; normalize and replay candidates | Manifest, evidence-health state, defect signatures, replay results |
 | 5. Quality gate | Apply deterministic correctness and evidence policies | Pass, fail, or inconclusive with explicit reasons |
 | 6. Promote | Mark the change eligible for its next approved step | Same-SHA decision; never automatic production approval |
@@ -138,11 +138,11 @@ and PIT checks remain in place alongside the new fuzzing lanes.
 
 ### One pipeline, different campaign profiles
 
-| Trigger | Java/API profile | Workflow profile | Promotion |
+| Trigger | .NET/API profile | Workflow profile | Promotion |
 |---|---|---|---|
 | Pull request | Reviewed regression corpus, property replay, HTTP boundaries | Golden fixtures + bounded mutations | PR eligibility after rollout; no trusted corpus writes |
 | Main push | Same-commit regression and contract checks | Full routing/gate controls | Evidence eligible for release checks |
-| Nightly | Coverage-guided Java and expanded HTTP campaigns | Deeper seeded mutations | Reviewed regression candidates; no release |
+| Nightly | Coverage-guided .NET and expanded HTTP campaigns | Deeper seeded mutations | Reviewed regression candidates; no release |
 | Manual | Explicit, bounded target and duration selection | Operator-selected scope | Report/replay only unless separately approved |
 
 Exact budgets and resource limits remain in the
@@ -165,7 +165,7 @@ flowchart LR
   end
   Readiness["5. READINESS<br/>Dispatch review agent"]
   Approval["6. APPROVAL<br/>production environment"]
-  Publish["7. PUBLISH<br/>Image + Maven<br/>Signatures +<br/>attestations"]
+  Publish["7. PUBLISH<br/>Image + NuGet<br/>Signatures +<br/>attestations"]
   Release["8. RELEASE<br/>GitHub Release +<br/>notes agent"]
   Advice["Advisory GO / NO-GO issue"]
   Tag --> Validate --> Gates

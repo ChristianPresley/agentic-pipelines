@@ -8,12 +8,12 @@ the original detailed architecture and lifecycle diagrams below.
 
 ## Outcome and scope
 
-Continuously exercise both the Java application and the automation that builds,
+Continuously exercise both the .NET application and the automation that builds,
 tests, interprets, and releases it. Every result must connect an input to a
 target, oracle, execution, artifact, decision, and follow-up.
 
-This design extends existing Jazzer, jqwik, Schemathesis, actionlint, zizmor,
-PIT, and Python report helpers rather than replacing them. It does not execute
+This design extends existing SharpFuzz, FsCheck, Schemathesis, actionlint, zizmor,
+Stryker.NET, and Python report helpers rather than replacing them. It does not execute
 mutated workflows against production, publish packages, or make agents the
 authority for pass/fail decisions.
 
@@ -34,7 +34,7 @@ flowchart TB
   Plan["Deterministic campaign planner<br/>commit + trust tier + limits"]
   subgraph Lanes["Three independent lanes"]
     direction LR
-    Java["Java lane<br/>Jazzer + jqwik (existing)"]
+    Dotnet[".NET lane<br/>SharpFuzz + FsCheck (existing)"]
     HTTP["HTTP lane<br/>Schemathesis + targeted boundary cases"]
     WF["Workflow lane<br/>event, config, compiler and report mutations"]
   end
@@ -51,7 +51,7 @@ flowchart TB
   Events --> Plan
   Seeds --> Lanes
   Plan --> Lanes
-  Java --> App
+  Dotnet --> App
   HTTP --> App
   WF --> Harness
   App --> Raw
@@ -73,7 +73,7 @@ flowchart TB
 
 | Lane | Real target | Generation | Oracle | Output |
 |---|---|---|---|---|
-| Java | `sanitize`, `greet`, `shout` | Coverage-guided bytes, direct UTF-16 strings, jqwik properties | Independent contract properties, exceptions, bounded work | JUnit, native engine statistics, minimized inputs |
+| .NET | `sanitize`, `greet`, `shout` | Coverage-guided bytes, direct UTF-16 strings, FsCheck properties | Independent contract properties, exceptions, bounded work | xUnit, native engine statistics, minimized inputs |
 | HTTP | Request decoding, validation, JSON, error mapping, published OpenAPI | Schema-derived and explicit boundary requests | Status/schema consistency, response semantics, no unexpected 5xx | JUnit plus sanitized request/response replay |
 | Workflow | YAML/frontmatter, event routing, shell adapters, scanner ingestion, gates, dedupe, rendering | Structured configuration mutations, event sequences, corrupted reports | Expected decisions, parser robustness, command trace, known-mutant detection | Case-level results, graph, fixture, replay manifest |
 
@@ -81,10 +81,10 @@ Coverage in one lane is not coverage in another. ZAP remains complementary DAST,
 not a substitute for application or workflow fuzzing. PIT measures test
 effectiveness, not random-input throughput.
 
-## 2. Java and HTTP target contracts
+## 2. .NET and HTTP target contracts
 
-The current [service](../src/main/java/io/github/christianpresley/hello/GreetingService.java)
-processes Java `char` values. Its 50-character limit is a UTF-16 code-unit bound,
+The current [service](../src/)
+processes .NET `char` values. Its 50-character limit is a UTF-16 code-unit bound,
 not a byte, Unicode-code-point, or grapheme bound.
 
 | Target | Required properties | Boundary corpus |
@@ -102,12 +102,12 @@ behavior before asserting it. JSON escaping, not character deletion alone,
 governs response encoding.
 
 Extend the existing
-[fuzz target](../src/test/java/io/github/christianpresley/hello/GreetingServiceFuzzTest.java)
-with bounds and semantic oracles. Keep jqwik's generated-case counts and replay
-seeds distinct from JUnit test-method counts. Do not copy the sanitization loop
+[fuzz target](../src/)
+with bounds and semantic oracles. Keep FsCheck's generated-case counts and replay
+seeds distinct from xUnit test-method counts. Do not copy the sanitization loop
 into the oracle: use output invariants, fixed boundary examples, and metamorphic
 relations. A direct-string target is needed because UTF-8 byte decoding cannot
-represent every Java string, including isolated surrogates.
+represent every .NET string, including isolated surrogates.
 
 Use the existing test corpus convention supported by the pinned Jazzer version.
 Explicitly configure and verify the generated-corpus location before caching it;
@@ -127,7 +127,7 @@ approved integration checks.
 | W1: configuration and compilation | YAML scalar types, missing/extra keys, `needs` graphs, matrices, frontmatter, imports, action refs | Bounded parse/compile; invalid inputs rejected; cycles/unknown jobs detected; pinned compiler produces expected structure |
 | W2: event and trust routing | PR vs push, fork vs same-repo, main vs tag, completion vs cancellation, synthetic event fields | Correct lane/mode; no trusted publication from fork data; allowed branch/event filters; inputs validated before shell use |
 | W3: orchestration sequences | Missing scanners, out-of-order completions, duplicate events, multiple attempts, stale success, canceled jobs, paginated API responses | Expected scanners all accounted for; commit/event/attempt alignment; no premature success; idempotent final aggregation |
-| W4: report ingestion | SARIF/JUnit/ZAP/PMD/Checkstyle/JSON mutations, absent files, malformed XML/JSON, excessive nesting/size, duplicate records | No hangs; structured parse errors; missing evidence is inconclusive; stable counts and classification |
+| W4: report ingestion | SARIF/xUnit/ZAP/Roslyn analyzer/dotnet format/JSON mutations, absent files, malformed XML/JSON, excessive nesting/size, duplicate records | No hangs; structured parse errors; missing evidence is inconclusive; stable counts and classification |
 | W5: suppression and dedupe | Expired entries, changed paths, repeated crashes, open/closed issues, signature changes, issue-list pagination | Expiry respected; distinct failures not merged; repeats linked; closed findings can recur under an explicit recurrence policy |
 | W6: rendering and replay metadata | Quotes, newlines, Markdown/HTML metacharacters, annotation control text, long strings, local paths | Escaped output; no interpreted instructions; bounded excerpts; portable replay; no secret/raw-payload publication |
 | W7: release decisions | Semver inputs, prior tags, missing/failed checks, mismatched artifact SHA, missing approval | Reject invalid release candidates; select correct evidence; never invoke real tagging, publishing, signing, or production approvals |
@@ -167,7 +167,7 @@ attempt; accept a different SHA; swallow malformed evidence; disable the
 201-unit rejection; remove the service length cap; and merge two different
 failure signatures. Each control must be detected by the appropriate oracle.
 The control suite must also accept known-good and intentionally rejected cases.
-Report workflow mutant detection separately from Java PIT.
+Report workflow mutant detection separately from Stryker.NET.
 
 ## 4. Scheduling and resource envelope
 
@@ -175,9 +175,9 @@ These are initial design limits, not measured capacity. Run only on dedicated,
 ephemeral CI workers. Local use must stay within explicitly selected temporary
 directories and loopback ports; this workstation is shared.
 
-| Tier | Java | HTTP | Workflow | Operational limit |
+| Tier | .NET | HTTP | Workflow | Operational limit |
 |---|---|---|---|---|
-| PR | Reviewed regressions and fixed jqwik replay seeds; no corpus promotion | Boundary replay and up to 200 examples per operation | Golden cases plus 200 seeded mutations | 12-minute wall cap; 3 concurrent lane jobs |
+| PR | Reviewed regressions and fixed FsCheck replay seeds; no corpus promotion | Boundary replay and up to 200 examples per operation | Golden cases plus 200 seeded mutations | 12-minute wall cap; 3 concurrent lane jobs |
 | Main push | PR suite plus new regression inputs | Same-commit app/contract replay | Full routing and gate controls | Same caps; trusted evidence publication only |
 | Nightly | 3 targets, 5 minutes effective fuzz time each, sequential inside lane | 5 minutes, at most 1,000 examples per operation | Up to 5,000 mutations or 5 minutes, whichever first | 25-minute lane cap, at most 3 lane jobs |
 | Manual deep | 1-15 minutes per target, hard maximum 3 targets | At most 10 minutes | At most 10,000 mutations or 10 minutes | 60-minute lane cap; operator-selected scope |
@@ -187,7 +187,7 @@ for build/startup, minimization, and upload; a timed-out job is incomplete even
 when its last progress message was healthy. Do not multiply manual duration
 through an unbounded matrix. Record runner-minutes separately from wall time.
 
-Initial per-worker caps: 2 CPUs, 4 GiB memory, 1 GiB campaign disk; Java fuzz input
+Initial per-worker caps: 2 CPUs, 4 GiB memory, 1 GiB campaign disk; .NET fuzz input
 4 KiB; HTTP query 8 KiB; normalizer fixture 1 MiB; report nesting depth 64; 1,000
 files and 100 MiB total expanded artifact content. Oversize-limit tests assert
 explicit rejection. Limits are harness envelopes, not new production behavior.
@@ -208,7 +208,7 @@ do not silently change the current findings schema or its consumers.
 | Identity | Schema version, repository, tested commit, workflow path, run ID and attempt, job/target ID, event, PR head and tested merge SHA when applicable |
 | Provenance | Harness/config revision, exact engine/compiler versions, action SHAs, tool artifact digests, application jar/image digest for HTTP |
 | Campaign | Lane, target, requested/effective mode and budget, UTC timestamps, seed, limits, corpus input/output digest |
-| Execution | Generated/accepted/rejected cases, engine executions, jqwik checks, request count, completion reason, exit status, resource usage |
+| Execution | Generated/accepted/rejected cases, engine executions, FsCheck checks, request count, completion reason, exit status, resource usage |
 | Evidence health | Expected/received artifact list, parse status per file, schema validation, producer conclusion, missing/expired/corrupt reasons |
 | Defect | Stable signature, category, severity rationale where applicable, location, original/minimized input digest, replay outcomes, first/last seen |
 | Decision | Health state, defect state, gate-policy revision, blocking reasons, suppressions with owner/reason/expiry |
@@ -325,7 +325,7 @@ No phase below was implemented by this documentation change.
 1. **Evidence first:** add manifests and strict completeness checks around
    existing runners/normalizers. Fix mode labels and verify effective Jazzer
    duration/corpus behavior. Preserve schema-1 consumers.
-2. **Application oracles:** add the Java/string and HTTP boundaries, retain the
+2. **Application oracles:** add the .NET/string and HTTP boundaries, retain the
    existing 400 behavior, and document intended responses in OpenAPI. Promote
    the observed ST103 case only after reproducing it on the implementation SHA.
 3. **Workflow harness:** share decision adapters with production workflows; add

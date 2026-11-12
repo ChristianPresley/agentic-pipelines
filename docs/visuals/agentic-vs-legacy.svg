@@ -100,7 +100,7 @@
   <rect x="920" y="554" width="632" height="88" rx="14" fill="#fdf4ff" stroke="#e879f9" stroke-width="1.5" />
   <use href="#i-spark" x="934" y="588" width="20" height="20" color="#86198f"/>
   <text x="970" y="593.5" class="cell">A person starts the remediation agent. It makes the smallest fix and a test, runs</text>
-  <text x="970" y="612.5" class="cell">./mvnw verify and opens one pull request.</text>
+  <text x="970" y="612.5" class="cell">dotnet test and opens one pull request.</text>
   <path d="M908 598H916" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
   <rect x="48" y="652" width="240" height="88" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
   <circle cx="82" cy="696" r="19" fill="#f1f5f9" stroke="#cbd5e1"/>

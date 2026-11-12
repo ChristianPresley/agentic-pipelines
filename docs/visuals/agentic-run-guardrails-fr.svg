@@ -75,7 +75,7 @@
   <text x="390.0" y="450" class="small" fill="#1e293b">Validation des numéros de tag et</text>
   <text x="390.0" y="468" class="small" fill="#1e293b">de ticket</text>
   <circle cx="378.0" cy="491" r="3" fill="#0f766e"/>
-  <text x="390.0" y="496" class="small" fill="#1e293b">Cache Maven préparé (correction)</text>
+  <text x="390.0" y="496" class="small" fill="#1e293b">Cache NuGet préparé (correction)</text>
   <path class="connector" d="M632.0 351H660.0"/>
   <rect x="664.0" y="180" width="272.0" height="342" rx="16" fill="#fdf4ff" stroke="#e879f9" stroke-width="2" />
   <text x="920.0" y="208" class="number" text-anchor="end">03</text>
