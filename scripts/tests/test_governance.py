@@ -107,15 +107,18 @@ class Explainer(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get("OPA"), "set OPA to the path of an opa binary to run policy evaluation tests")
 class GovernEvaluate(unittest.TestCase):
-    def evaluate(self, root: Path, out: Path) -> dict:
-        subprocess.run(["python", str(ROOT / "scripts/governance/govern.py"), "evaluate", "--root", str(root),
-                        "--policy", str(ROOT / "policy"), "--opa", os.environ["OPA"], "--out-dir", str(out),
-                        "--today", "2026-01-01"], check=True, capture_output=True)
+    def evaluate(self, root: Path, out: Path, today: str | None = "2026-01-01") -> dict:
+        cmd = ["python", str(ROOT / "scripts/governance/govern.py"), "evaluate", "--root", str(root),
+               "--policy", str(ROOT / "policy"), "--opa", os.environ["OPA"], "--out-dir", str(out)]
+        if today:
+            cmd += ["--today", today]
+        subprocess.run(cmd, check=True, capture_output=True)
         return json.loads((out / "verdict.json").read_text(encoding="utf-8"))
 
     def test_this_repository_has_no_blocking_violations(self):
         with tempfile.TemporaryDirectory() as tmp:
-            verdict = self.evaluate(ROOT, Path(tmp))
+            # Real date: the committed waivers are judged against today, not a frozen test date.
+            verdict = self.evaluate(ROOT, Path(tmp), today=None)
         self.assertEqual(verdict["blocking"], [], verdict["blocking"])
 
     def test_unpinned_action_and_runner_are_blocked(self):
