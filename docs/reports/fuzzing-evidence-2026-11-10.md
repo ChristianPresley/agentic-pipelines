@@ -15,13 +15,13 @@ as deployed capabilities here.
 | ID | Evidence and identity | Used for |
 |---|---|---|
 | E1 | [Fuzzing run 42732777125](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125), push, attempt 1, baseline SHA | Dedicated regression result and cache log |
-| E2 | [Jazzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `jazzer-results` | Surefire XML: one test, 7.893 s |
+| E2 | [fuzzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `fuzz-results` | Test-result XML: one test, 7.893 s |
 | E3 | [Findings artifact 13724974274](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13724974274), `findings-fuzz` | Schema 1; no findings, no blocking records |
 | E4 | [DAST run 42732776744](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744), push, attempt 1, baseline SHA | API fuzzing and DAST outcome |
 | E5 | [Schemathesis artifact 13724734696](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744/artifacts/13724734696), `schemathesis-results` | ST103 operation-level failure and request |
 | E6 | [DAST findings artifact 13726080575](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744/artifacts/13726080575), `findings-dast` | 10 normalized records and severity distribution |
 | E7 | [CI run 42732776469](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776469), push, attempt 1, baseline SHA | Unit/property/integration and quality evidence |
-| E8 | [Build artifact 13725138339](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776469/artifacts/13725138339), `build-reports` | JUnit, build summary, aggregate JaCoCo |
+| E8 | [Build artifact 13725138339](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776469/artifacts/13725138339), `build-reports` | xUnit, build summary, aggregate coverlet |
 | E9 | [Mutation artifact 13724544989](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776469/artifacts/13724544989), `mutation-reports` | 17 mutation records, all KILLED |
 | E10 | [Workflow lint run 42726975185](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42726975185), push, SHA `71143ba95b743d7c443ec851dfe23035d8f06a3a` | Historical lint success, not baseline-SHA evidence |
 | E11 | [Scorecard run 42732776397](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776397), push, baseline SHA | Failure conclusion only; root cause not established |
@@ -39,7 +39,7 @@ Relative source links navigate the current checkout.
 
 ## 2. Measured execution and oracle results
 
-### Java
+### .NET
 
 | Suite | Tests | Failures / errors / skipped | Suite seconds | Source |
 |---|---:|---|---:|---|
@@ -51,29 +51,29 @@ Relative source links navigate the current checkout.
 | **CI total** | **15** | **0 / 0 / 0** | **21.037** | E8 |
 | GreetingServiceFuzzTest (dedicated workflow) | 1 | 0 / 0 / 0 | 7.893 | E2; not added to CI total |
 
-Suite time is the JUnit-reported duration, not engine fuzzing time or runner cost.
+Suite time is the test-runner-reported duration, not engine fuzzing time or runner cost.
 The CI property XML records 1,000 checks per property:
 
 - `greetingNeverNullAndAlwaysWellFormed`: seed `8963026254894808161`.
 - `sanitizedNameIsBoundedAndSafe`: seed `305203101436964123`.
 
-These seeds identify the sampled jqwik run; replay also requires the same jqwik,
+These seeds identify the sampled FsCheck run; replay also requires the same FsCheck,
 code, and generator configuration.
 
-JaCoCo E8 records 20 covered / 22 total lines and 16 covered / 18 total branches.
+coverlet E8 records 20 covered / 22 total lines and 16 covered / 18 total branches.
 `GreetingService` has 12/12 covered lines and 16/18 covered branches.
 `HelloApplication` accounts for the two missed lines. This does not isolate
-coverage contributed by fuzzing. E9 records 17 KILLED out of 17 PIT mutations,
+coverage contributed by fuzzing. E9 records 17 killed out of 17 mutations,
 with no surviving/no-coverage records in this sample. The
-[mutation profile](../../pom.xml) excludes fuzz, property, and `*IT` test classes.
+[mutation profile](../../stryker-config.json) excludes fuzz, property, and `*IT` test classes.
 The build summary's `mutation: null` belongs to the separate build job, not proof
 that the separate mutation job did not run.
 
-### Effective Jazzer mode and persistence
+### Effective fuzzer mode and persistence
 
 E1 is a push run. The [workflow shell branch](../../.github/workflows/fuzz.yml)
 executes regression on both PR and push. Its job-name expression labels only PRs
-as regression, hence E1's misleading `Jazzer (fuzzing)` label.
+as regression, hence E1's misleading `fuzzer (fuzzing)` label.
 
 The E1 log records:
 
@@ -82,7 +82,7 @@ The E1 log records:
 - Cache miss for the run key and fallback prefix.
 - Cache path validation warning: configured path did not exist; no cache saved.
 
-E2 contains Surefire reports only, not a corpus or crash input. The reviewed test
+E2 contains test-result reports only, not a corpus or crash input. The reviewed test
 resources contained no corpus files. This is evidence of missing persistence in
 the sampled regression run, **not** proof that every scheduled run loses corpus.
 
@@ -111,8 +111,8 @@ The configured 200-example cap is not a measured execution count.
 The failure is `ST103 Undocumented status code`: received 400, documented 200.
 Its request has a long all-zero `name` query value; its response is a 400 problem
 object with detail `Invalid request parameter`. This agrees with the
-[controller's 200-unit limit](../../src/main/java/io/github/christianpresley/hello/HelloController.java)
-and [generic validation handler](../../src/main/java/io/github/christianpresley/hello/ApiExceptionHandler.java).
+[controller's 200-unit limit](../../src/)
+and [generic validation handler](../../src/).
 The intended design action is to document and test the validation response,
 not weaken validation. The raw reproduction is in E5; it was not rerun here.
 
@@ -124,7 +124,7 @@ are consistent with the current configuration.
 | E6 record class | Count | Interpretation |
 |---|---:|---|
 | Schemathesis medium | 1 | ST103 contract discrepancy |
-| ZAP medium | 1 | Scanner-reported Spring Actuator information leak; not independently confirmed |
+| ZAP medium | 1 | Scanner-reported framework health-endpoint information leak; not independently confirmed |
 | ZAP low | 2 | Cross-Origin-Resource-Policy and X-Content-Type-Options headers |
 | ZAP info | 6 | Client errors, four fetch-metadata header records, cacheability |
 | Critical / high / suppressed / blocking | 0 / 0 / 0 / 0 | Current normalized output, not proof of no defects |
@@ -225,7 +225,7 @@ flowchart TB
   Readiness --> Recommendation["GO / NO-GO issue + chat"]
   Readiness --> Approval["production environment"]
   Build & E2E --> Approval
-  Approval --> Publish["Image / Maven / signatures / attestations"]
+  Approval --> Publish["Image / NuGet / signatures / attestations"]
   Publish --> GHRelease["GitHub Release"]
   GHRelease --> Notes["Dispatch Release Notes Writer"]
   Notes --> Highlights["Release highlights + chat"]
@@ -256,9 +256,9 @@ dispatches Release rather than relying on token-generated tag events.
 
 | Connection | Source / consumer | Important constraint |
 |---|---|---|
-| Java setup -> Java jobs | [Composite action](../../.github/actions/setup-java/action.yml), CI/Fuzzing/DAST/E2E and scanner builds | Temurin 21, Maven dependency cache |
+| .NET setup -> .NET jobs | [Composite action](../../.github/actions/setup-dotnet/action.yml), CI/Fuzzing/DAST/E2E and scanner builds | .NET 11 SDK, NuGet package cache |
 | CI -> test/coverage/mutation artifacts | [CI](../../.github/workflows/ci.yml), [build summary](../../.github/scripts/build_summary.py) | CI emits build reports, **not** `findings-ci` |
-| Jazzer -> raw -> findings | [Fuzzing](../../.github/workflows/fuzz.yml), [normalizer](../../.github/scripts/security_report.py) | High-severity JUnit failures; summary always runs |
+| fuzzer -> raw -> findings | [Fuzzing](../../.github/workflows/fuzz.yml), [normalizer](../../.github/scripts/security_report.py) | High-severity JUnit failures; summary always runs |
 | ZAP/Schemathesis -> raw -> findings | [DAST](../../.github/workflows/dast.yml), normalizer | Schemathesis JUnit mapped medium; ZAP risk mapping |
 | Static scanners -> findings | [SAST](../../.github/workflows/sast.yml), [SCA](../../.github/workflows/sca.yml), [Secrets and IaC](../../.github/workflows/secrets-iac.yml), [Container](../../.github/workflows/container.yml) | Six total normalized scanner producers including Fuzzing/DAST |
 | Seven scanner completions -> coordination | [Security Gate](../../.github/workflows/security-gate.yml) | Main push run metadata; coordination is not an all-success gate |
@@ -314,7 +314,7 @@ Source-derived test priorities, **not dynamically confirmed failures**:
   need dedicated tests before treating completion as complete evidence.
 - Release checks for any successful matching workflow in the queried push runs;
   cases with a newer failed run need an explicit selection policy and tests.
-- Current dedupe groups by tool/rule, and Jazzer rule IDs derive from testcase
+- Current dedupe groups by tool/rule, and fuzzer rule IDs derive from testcase
   names; different failures inside one target can need finer signatures.
 - Corpus cache naming alone does not establish that the engine reads/writes
   that directory.
@@ -347,7 +347,7 @@ sample, not a reliability percentage or trend.
 ## 6. Limitations and verification
 
 - No new fuzzing, publishing, release, or agentic workflow was dispatched.
-- Java was absent from the local PATH; no new local Java run is claimed.
+- The .NET SDK was absent from the local PATH; no new local .NET run (including WSLC container runs) is claimed.
   An existing local E2E XML reported six passes but lacked the source/run
   provenance needed to combine it with the CI totals above.
 - Report totals and percentages were independently recalculated from downloaded

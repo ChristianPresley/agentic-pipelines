@@ -1,0 +1,5 @@
+{
+  "maintenance": {
+    "runs_on": "ubuntu-26.04"
+  }
+}

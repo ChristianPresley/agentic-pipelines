@@ -97,7 +97,7 @@ jobs:
   close-expired-discussions:
     name: Close expired discussions
     if: ${{ (!(github.event.repository.fork)) && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call' || inputs.operation == '' || inputs.operation == 'none') }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Closing expired resources requires write access to this resource type only.
     permissions:
       discussions: write
@@ -120,7 +120,7 @@ jobs:
   close-expired-issues:
     name: Close expired issues
     if: ${{ (!(github.event.repository.fork)) && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call' || inputs.operation == '' || inputs.operation == 'none') }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Closing expired resources requires write access to this resource type only.
     permissions:
       issues: write
@@ -143,7 +143,7 @@ jobs:
   close-expired-pull-requests:
     name: Close expired pull requests
     if: ${{ (!(github.event.repository.fork)) && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call' || inputs.operation == '' || inputs.operation == 'none') }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Closing expired resources requires write access to this resource type only.
     permissions:
       pull-requests: write
@@ -167,7 +167,7 @@ jobs:
   run_operation:
     name: Run maintenance operation
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation != '' && inputs.operation != 'none' && inputs.operation != 'safe_outputs' && inputs.operation != 'create_labels' && inputs.operation != 'activity_report' && inputs.operation != 'close_agentic_workflows_issues' && inputs.operation != 'clean_cache_memories' && inputs.operation != 'update_pull_request_branches' && inputs.operation != 'validate' && inputs.operation != 'forecast' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Updates, upgrades, and workflow enable/disable operations need repository write access.
     permissions:
       actions: write
@@ -228,7 +228,7 @@ jobs:
   update_pull_request_branches:
     name: Update pull request branches
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'update_pull_request_branches' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Branch updates may write commits and update pull requests.
     permissions:
       contents: write
@@ -268,7 +268,7 @@ jobs:
   apply_safe_outputs:
     name: Apply safe outputs
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'safe_outputs' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Replay can create or update any supported safe-output resource.
     permissions:
       actions: read
@@ -330,7 +330,7 @@ jobs:
   create_labels:
     name: Create labels
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'create_labels' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Creating repository labels uses the issues API.
     permissions:
       contents: read
@@ -380,7 +380,7 @@ jobs:
   activity_report:
     name: activity report
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'activity_report' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     # Read workflow logs and create the resulting report issue.
     permissions:
@@ -489,7 +489,7 @@ jobs:
   forecast_report:
     name: forecast report
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'forecast' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     # Read workflow logs and create the resulting report issue.
     permissions:
@@ -594,7 +594,7 @@ jobs:
   close_agentic_workflows_issues:
     name: Close agentic workflows issues
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'close_agentic_workflows_issues' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-26.04
     # Closing no-repro issues requires issues: write.
     permissions:
       issues: write
@@ -631,7 +631,7 @@ jobs:
   validate_workflows:
     name: Validate workflows
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.operation == 'validate' && (!(github.event.repository.fork)) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Read workflow sources and file issues for validation findings.
     permissions:
       contents: read

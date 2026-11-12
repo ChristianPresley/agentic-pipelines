@@ -4,6 +4,7 @@ on:
   schedule: daily
   workflow_dispatch:
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 20
 permissions:
   contents: read
@@ -23,6 +24,9 @@ observability:
       Authorization: ${{ secrets.OTLP_TOKEN }}
     if-missing: ignore
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-discussion:
     category: Security
     title-prefix: "[daily security report] "

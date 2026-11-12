@@ -1,3 +1,3 @@
 # Accepted Trivy findings. Add an ID with a justification and an expiry comment.
-# Dockerfile has no HEALTHCHECK: probes are provided by the orchestrator via /actuator/health.
+# Dockerfile has no HEALTHCHECK: probes are provided by the orchestrator via /health/{live,ready}.
 AVD-DS-0026

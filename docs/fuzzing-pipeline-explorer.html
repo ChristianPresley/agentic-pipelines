@@ -50,7 +50,7 @@
     <nav class="tabs wrap" aria-label="Pipeline areas">
       <a id="tab-overview" href="#overview" data-tab="overview">Overview</a>
       <a id="tab-source-build" href="#source-build" data-tab="source-build">Source and build</a>
-      <a id="tab-java" href="#java" data-tab="java">Java tests</a>
+      <a id="tab-dotnet" href="#dotnet" data-tab="dotnet">.NET tests</a>
       <a id="tab-api" href="#api" data-tab="api">API tests</a>
       <a id="tab-workflows" href="#workflows" data-tab="workflows">Workflow tests</a>
       <a id="tab-evidence" href="#evidence" data-tab="evidence">Test records</a>
@@ -63,13 +63,13 @@
   </div>
   <main id="content" class="wrap" tabindex="-1">
     <p id="route-status" class="route-status" role="status"></p>
-    <noscript><div class="callout">JavaScript is off. All areas are shown below. The tabs link to these areas. Side panels need JavaScript.</div></noscript>
+    <noscript><div class="callout">Scripting is off. All areas are shown below. The tabs link to these areas. Side panels need JS.</div></noscript>
     <section id="overview" data-panel>
       <div class="chips"><span class="badge proposed">Planned fuzz tests</span><span class="badge existing">Current release steps</span><span class="badge warning">Design, not live results</span></div>
       <h2>The full pipeline</h2>
       <p class="intro">The top row tests the app and its workflows. The middle row shows the release steps. The next row shows how reviewed inputs become tests. The bottom section shows the seven agents that triage, explain, fix and report.</p>
       <div class="stats">
-        <button type="button" class="stat" data-stat="groups" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>3 test groups</strong><span>Java, API, and workflow tests in the design</span></button>
+        <button type="button" class="stat" data-stat="groups" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>3 test groups</strong><span>.NET, API, and workflow tests in the design</span></button>
         <button type="button" class="stat" data-stat="checks" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>7 release checks</strong><span>Required scanner workflows for the same commit</span></button>
         <button type="button" class="stat" data-stat="agents" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>7 agents</strong><span>Triage, review, report, failure analysis, release readiness, release notes and remediation</span></button>
         <button type="button" class="stat" data-stat="guide" aria-haspopup="dialog" aria-controls="stat-pane" aria-expanded="false"><strong>Read-only guide</strong><span>This page cannot run jobs or approve a release</span></button>
@@ -82,10 +82,10 @@
       <div id="stage-list" class="stage-list" hidden></div>
       <div id="pipeline-graph" class="diagram-scroll" tabindex="0" role="region" aria-label="Pipeline graph. Scroll sideways on a small screen.">
         <div class="diagram">
-          <img src="visuals/pipeline-overview.svg" width="1600" height="2268" alt="Delivery pipeline overview. Planned Java, API, and workflow tests lead to result checks. Current release steps lead to signed packages. Reviewed inputs feed future tests. Seven agentic workflows triage findings, review pull requests, report daily, analyse failures, assess release readiness, write release notes and propose fixes, with declared limits and people deciding.">
+          <img src="visuals/pipeline-overview.svg" width="1600" height="2268" alt="Delivery pipeline overview. Planned .NET, API, and workflow tests lead to result checks. Current release steps lead to signed packages. Reviewed inputs feed future tests. Seven agentic workflows triage findings, review pull requests, report daily, analyse failures, assess release readiness, write release notes and propose fixes, with declared limits and people deciding.">
           <a class="hotspot" href="#source-build" data-stage="source" data-box="48 278 170 144" aria-label="Open Source details"></a>
           <a class="hotspot" href="#source-build" data-stage="build" data-box="250 278 170 144" aria-label="Open Build details"></a>
-          <a class="hotspot" href="#java" data-stage="java" data-box="468 272 328 56" aria-label="Open Java test details"></a>
+          <a class="hotspot" href="#dotnet" data-stage="dotnet" data-box="468 272 328 56" aria-label="Open .NET test details"></a>
           <a class="hotspot" href="#api" data-stage="api" data-box="468 342 328 56" aria-label="Open API test details"></a>
           <a class="hotspot" href="#workflows" data-stage="workflow" data-box="468 412 328 56" aria-label="Open Workflow test details"></a>
           <a class="hotspot" href="#evidence" data-stage="collect" data-box="844 278 220 144" aria-label="Open Test record details"></a>
@@ -109,7 +109,7 @@
         </div>
       </div>
       <div class="grid">
-        <article class="card"><h3>Build and test tools</h3><div class="product-list" data-products="actions adoptium maven junit spring zap"></div><p>Select a logo or tool name to see where it is used.</p></article>
+        <article class="card"><h3>Build and test tools</h3><div class="product-list" data-products="actions dotnet nuget xunit aspnet zap"></div><p>Select a logo or tool name to see where it is used.</p></article>
         <article class="card"><h3>Result and release tools</h3><div class="product-list" data-products="python github docker copilot"></div><p>The Tools tab lists the stages for each product. Planned stages have a separate label.</p></article>
       </div>
       <div class="callout"><strong>Status labels:</strong> Current means the step exists in source files. Planned means the step is not built yet. A measured result has a date. Pass and Hold are example decisions, not live status.</div>
@@ -122,29 +122,29 @@
       <span class="badge existing">Current build</span> <span class="badge proposed">Planned result index</span>
       <h2>Source and build</h2>
       <p class="intro">Identify the commit before you read its test results. Build the app with fixed tool versions.</p>
-      <div class="product-list" data-products="actions git adoptium maven"></div>
+      <div class="product-list" data-products="actions git dotnet nuget"></div>
       <div class="grid">
-        <article class="card"><h3>Tools</h3><ul><li>GitHub Actions starts jobs for pull requests, pushes, schedules, and manual requests.</li><li>Temurin JDK 21 compiles Java. The Maven wrapper runs the build.</li><li>Maven Enforcer checks build requirements. Action references use fixed commit hashes.</li></ul></article>
+        <article class="card"><h3>Tools</h3><ul><li>GitHub Actions starts jobs for pull requests, pushes, schedules, and manual requests.</li><li>.NET SDK 11 compiles C#. dotnet build runs the build.</li><li>Roslyn analyzers and dotnet format check build requirements. Action references use fixed commit hashes.</li></ul></article>
         <article class="card"><h3>Work</h3><ol><li>Select the commit and event.</li><li>Build the app and tests.</li><li>Start a local app for API tests.</li><li>Planned: record tool versions, input hashes, limits, and job identity in one result index.</li></ol></article>
-        <article class="card"><h3>Results</h3><p>The build creates Java classes, a jar, and test files. The planned index links these files to the tested commit.</p><p><strong>Next:</strong> Java, API, and workflow tests.</p></article>
-        <article class="card"><h3>Source files</h3><ul><li><a href="../pom.xml">Build settings and versions</a></li><li><a href="../.github/actions/setup-java/action.yml">Java setup</a></li><li><a href="../.github/workflows/ci.yml">CI workflow</a></li></ul></article>
+        <article class="card"><h3>Results</h3><p>The build creates C# classes, an app assembly (DLL), and test files. The planned index links these files to the tested commit.</p><p><strong>Next:</strong> .NET, API, and workflow tests.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../Directory.Build.props">Build settings and versions</a></li><li><a href="../.github/actions/setup-dotnet/action.yml">.NET setup</a></li><li><a href="../.github/workflows/ci.yml">CI workflow</a></li></ul></article>
       </div>
       <div class="callout">A cache can make a build faster. It does not prove that tests ran. Pull requests must not replace approved test inputs.</div>
-      <div class="next"><a href="#java">Next: Java tests</a><a href="#api">API tests</a><a href="#workflows">Workflow tests</a></div>
+      <div class="next"><a href="#dotnet">Next: .NET tests</a><a href="#api">API tests</a><a href="#workflows">Workflow tests</a></div>
     </section>
 
-    <section id="java" data-panel>
+    <section id="dotnet" data-panel>
       <span class="badge existing">Current tools</span> <span class="badge proposed">Planned extra checks</span>
-      <h2>Java tests</h2>
+      <h2>.NET tests</h2>
       <p class="intro">Test the greeting service without HTTP. Use fixed inputs, generated strings, and fuzz inputs.</p>
-      <div class="product-list" data-products="adoptium junit jazzer jqwik jacoco pit"></div>
+      <div class="product-list" data-products="dotnet xunit sharpfuzz fscheck coverlet stryker"></div>
       <div class="grid">
-        <article class="card"><h3>Tools</h3><ul><li>JUnit and AssertJ check fixed results.</li><li>jqwik 1.10.2 generates strings and records repeatable random seeds.</li><li>Jazzer 0.30.0 runs saved inputs. Fuzz mode searches for new inputs.</li><li>JaCoCo 0.8.16 measures code coverage. PIT 1.30.2 checks whether tests detect changed code.</li></ul></article>
-        <article class="card"><h3>Work</h3><ul><li>The current fuzz target converts UTF-8 bytes to a string. It checks the greeting format and some unsafe characters.</li><li>Property tests check the greeting and the name length.</li><li>Planned: test null inputs, Unicode, and 49/50/51-unit limits.</li><li>Planned: test Java strings that UTF-8 bytes cannot represent.</li></ul></article>
-        <article class="card"><h3>Results</h3><p>JUnit XML, Jazzer results, coverage files, and PIT reports go to the result checks.</p><p>Planned files also record the input hash, actual fuzz duration, run count, and repeat-run results.</p></article>
-        <article class="card"><h3>Source files</h3><ul><li><a href="../src/main/java/io/github/christianpresley/hello/GreetingService.java">Greeting service</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/GreetingServiceFuzzTest.java">Jazzer target</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/GreetingServicePropertyTest.java">Property tests</a></li><li><a href="../.github/workflows/fuzz.yml">Fuzz workflow</a></li></ul></article>
+        <article class="card"><h3>Tools</h3><ul><li>xUnit checks fixed results.</li><li>FsCheck generates strings and records repeatable random seeds.</li><li>SharpFuzz runs saved inputs. Fuzz mode searches for new inputs.</li><li>Coverlet measures code coverage. Stryker.NET checks whether tests detect changed code.</li></ul></article>
+        <article class="card"><h3>Work</h3><ul><li>The current fuzz target converts UTF-8 bytes to a string. It checks the greeting format and some unsafe characters.</li><li>Property tests check the greeting and the name length.</li><li>Planned: test null inputs, Unicode, and 49/50/51-unit limits.</li><li>Planned: test .NET strings that UTF-8 bytes cannot represent.</li></ul></article>
+        <article class="card"><h3>Results</h3><p>xUnit XML, SharpFuzz results, coverage files, and Stryker.NET reports go to the result checks.</p><p>Planned files also record the input hash, actual fuzz duration, run count, and repeat-run results.</p></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../src/HelloApp/GreetingService.cs">Greeting service</a></li><li><a href="../tests/HelloApp.Tests/GreetingServiceFuzzTests.cs">SharpFuzz target</a></li><li><a href="../tests/HelloApp.Tests/GreetingServicePropertyTests.cs">Property tests</a></li><li><a href="../.github/workflows/fuzz.yml">Fuzz workflow</a></li></ul></article>
       </div>
-      <div class="callout"><strong>Measured on 2026-11-10 UTC:</strong> the sampled push job ran saved tests, although its label said "fuzzing." It did not save its corpus cache. The CI run made 2,000 jqwik checks. That count is not a JUnit method count.</div>
+      <div class="callout"><strong>Measured on 2026-11-10 UTC:</strong> the sampled push job ran saved tests, although its label said "fuzzing." It did not save its corpus cache. The CI run made 2,000 FsCheck checks. That count is not an xUnit test count.</div>
       <div class="next"><a href="#api">Next: API tests</a><a href="#evidence">Check result files</a></div>
     </section>
 
@@ -152,12 +152,12 @@
       <span class="badge existing">Current API scans</span> <span class="badge proposed">Planned limit tests</span>
       <h2>API tests</h2>
       <p class="intro">Send requests through the full app. Check input validation, response codes, JSON, and error messages.</p>
-      <div class="product-list" data-products="spring schemathesis zap docker"></div>
+      <div class="product-list" data-products="aspnet schemathesis zap docker"></div>
       <div class="grid">
-        <article class="card"><h3>Tools</h3><ul><li>Schemathesis 4.33.0 reads <code>/v3/api-docs</code> and generates API requests.</li><li>Spring MVC and Jakarta Validation process <code>GET /api/hello?name=</code>.</li><li>MockMvc tests the controller. Container E2E tests send real HTTP requests.</li><li>OWASP ZAP performs separate security scans.</li></ul></article>
-        <article class="card"><h3>Work</h3><ul><li>Check empty names, missing names, and named greetings.</li><li>The controller accepts at most 200 decoded UTF-16 units. The service keeps at most 50 accepted units.</li><li>Planned: test 199, 200, and 201 units.</li><li>Check that responses match OpenAPI. Do not treat unexpected server errors as clean results.</li></ul></article>
+        <article class="card"><h3>Tools</h3><ul><li>Schemathesis 4.33.0 reads <code>/openapi/v1.json</code> and generates API requests.</li><li>ASP.NET Core minimal API endpoints process <code>GET /api/hello?name=</code>.</li><li>xUnit tests the endpoint. Container E2E tests send real HTTP requests.</li><li>OWASP ZAP performs separate security scans.</li></ul></article>
+        <article class="card"><h3>Work</h3><ul><li>Check empty names, missing names, and named greetings.</li><li>The API accepts at most 200 decoded UTF-16 units. The service keeps at most 50 accepted units.</li><li>Planned: test 199, 200, and 201 units.</li><li>Check that responses match OpenAPI. Do not treat unexpected server errors as clean results.</li></ul></article>
         <article class="card"><h3>Results</h3><p>Schemathesis and ZAP save reports. The Python helper creates <code>findings-dast</code>.</p><p>Planned repeat-run files keep a safe request and response. They do not include secrets.</p></article>
-        <article class="card"><h3>Source files</h3><ul><li><a href="../.github/workflows/dast.yml">DAST workflow</a></li><li><a href="../src/main/java/io/github/christianpresley/hello/HelloController.java">Controller</a></li><li><a href="../src/main/java/io/github/christianpresley/hello/ApiExceptionHandler.java">Validation error handler</a></li><li><a href="../src/test/java/io/github/christianpresley/hello/HelloApiE2E.java">Container E2E tests</a></li></ul></article>
+        <article class="card"><h3>Source files</h3><ul><li><a href="../.github/workflows/dast.yml">DAST workflow</a></li><li><a href="../src/HelloApp/Program.cs">API endpoints</a></li><li><a href="../tests/HelloApp.Tests/HelloApiE2ETests.cs">Container E2E tests</a></li></ul></article>
       </div>
       <div class="callout"><strong>Baseline ST103 finding:</strong> the app returned an intended 400 response. OpenAPI listed only 200. The severity gate still passed. Document the 400 response; do not remove validation. The 200-example setting is a limit, not a measured request count.</div>
       <div class="next"><a href="#workflows">Next: workflow tests</a><a href="#gates">Check the gate rules</a></div>
@@ -192,7 +192,7 @@
       <p class="intro">Keep source results separate from findings and decisions. A missing file does not mean that no defect exists.</p>
       <div class="product-list" data-products="actions python"></div>
       <div class="grid">
-        <article class="card"><h3>Current tools</h3><ul><li>GitHub Actions saves and downloads result files.</li><li><code>security_report.py</code> reads SARIF, JUnit, ZAP, PMD, and Checkstyle reports.</li><li><code>build_summary.py</code> reads test, coverage, and mutation results.</li><li><code>.security/baseline.json</code> lists accepted findings.</li></ul></article>
+        <article class="card"><h3>Current tools</h3><ul><li>GitHub Actions saves and downloads result files.</li><li><code>security_report.py</code> reads SARIF, xUnit, ZAP, and Roslyn analyzer reports.</li><li><code>build_summary.py</code> reads test, coverage, and mutation results.</li><li><code>.security/baseline.json</code> lists accepted findings.</li></ul></article>
         <article class="card"><h3>Planned checks</h3><ol><li>Check the repository, workflow, commit, event, run, and attempt.</li><li>Check that each required result file exists and is valid.</li><li>Keep the original failed input. Reduce it to a smaller input.</li><li>Repeat the input three times in fresh isolation. Record each result.</li></ol></article>
         <article class="card"><h3>Results</h3><p>Keep existing schema-1 findings. Add a separate result index. Record missing files, actual run counts, input hashes, and repeat-run results.</p><p>Use SHA-512 to check the integrity of new saved files.</p></article>
         <article class="card"><h3>Source files</h3><ul><li><a href="../.github/scripts/security_report.py">Report parser and finding groups</a></li><li><a href="../.github/scripts/build_summary.py">Build summary</a></li><li><a href="../.security/baseline.json">Accepted findings</a></li><li><a href="fuzzing-system-design.md#5-evidence-contract-and-persistence">Record and storage design</a></li></ul></article>
@@ -221,15 +221,15 @@
       <span class="badge existing">Current release steps</span> <span class="badge warning">No app deployment step</span>
       <h2>Release</h2>
       <p class="intro">Build, check, approve, and publish packages. This guide cannot start or approve a release.</p>
-      <div class="product-list" data-products="git github actions maven docker copilot"></div>
+      <div class="product-list" data-products="git github actions nuget docker copilot"></div>
       <div class="card table-scroll"><h3>Release stages</h3><table><thead><tr><th scope="col">Stage</th><th scope="col">Tools</th><th scope="col">Work</th></tr></thead><tbody>
         <tr><th scope="row">1. Tag</th><td>Git, gh CLI, Cut release</td><td>Create a version tag on main. Start Release.</td></tr>
         <tr><th scope="row">2. Check tag</th><td>Git and tag rules</td><td>Check the version format and main history. Reject an existing release.</td></tr>
         <tr><th scope="row">3. Gate</th><td>GitHub Actions and issue labels</td><td>Require the seven scanner passes. Block open high and critical findings.</td></tr>
-        <tr><th scope="row">4. Test</th><td>Maven, Docker, SBOM tools</td><td>Build and run container tests in parallel. Save the jar, checksums, and component list.</td></tr>
+        <tr><th scope="row">4. Test</th><td>dotnet test, Docker, SBOM tools</td><td>Build and run container tests in parallel. Save the app DLL, checksums, and component list.</td></tr>
         <tr><th scope="row">5. Review</th><td>Copilot and gh-aw</td><td>Ask an agent for a release-readiness issue. The issue is advice.</td></tr>
         <tr><th scope="row">6. Approve</th><td>GitHub production environment</td><td>Wait for the configured environment rules.</td></tr>
-        <tr><th scope="row">7. Publish</th><td>Buildx, GHCR, GitHub Packages, Cosign</td><td>Publish the image and Maven package. Add signatures and build records.</td></tr>
+        <tr><th scope="row">7. Publish</th><td>Buildx, GHCR, GitHub Packages, Cosign</td><td>Publish the image and NuGet package. Add signatures and build records.</td></tr>
         <tr><th scope="row">8. Release</th><td>gh release and notes agent</td><td>Create the GitHub Release. Ask the agent to add release notes.</td></tr>
       </tbody></table></div>
       <div class="callout">The readiness issue is not an approval gate. The baseline did not check external reviewer settings. E2E and publication build images separately. This page does not claim that their image hashes match.</div>
@@ -258,12 +258,12 @@
       <p class="intro">Use the same checked records for summaries, technical reports, and connection maps. This page does not update live results.</p>
       <div class="product-list" data-products="python github mermaid otel"></div>
       <div class="grid">
-        <article class="card"><h3>Summary report</h3><p>The baseline records 15 CI test results, 90.91% line coverage, and 17/17 killed PIT mutations.</p><p><span class="badge measured">Measured: 2026-11-10 UTC</span></p><p><a href="reports/fuzzing-summary-2026-11-10.md">Open the summary</a></p></article>
+        <article class="card"><h3>Summary report</h3><p>The baseline records 15 CI test results, 90.91% line coverage, and 17/17 killed Stryker.NET mutations.</p><p><span class="badge measured">Measured: 2026-11-10 UTC</span></p><p><a href="reports/fuzzing-summary-2026-11-10.md">Open the summary</a></p></article>
         <article class="card"><h3>Technical report</h3><p>Read run identity, result links, test counts, and known limits.</p><p>Baseline commit: <code>df252e45946c2e86d15783d460e8ed7cacf4fcdf</code>.</p><p><a href="reports/fuzzing-evidence-2026-11-10.md">Open the technical report</a></p></article>
         <article class="card"><h3>Other views</h3><p>The original maps remain available. Mermaid source remains editable.</p><p><a href="fuzzing-pipeline-view.md">Pipeline diagrams</a> &middot; <a href="fuzzing-system-design.md">System design</a> &middot; <a href="reports/fuzzing-evidence-2026-11-10.md#3-existing-workflow-connections">Connection maps</a></p></article>
         <article class="card"><h3>Planned report rules</h3><p>Give each measure a scope, unit, count, date, and source. Show unknown values as unknown, not zero.</p><p>Agents can explain records. They cannot change counts or waive gates. Optional OpenTelemetry export needs a configured endpoint.</p></article>
       </div>
-      <div class="callout">Open this HTML file in a browser. Keep its local CSS, JavaScript, SVG, and logo files. No build or external service is needed. GitHub's source viewer does not run the page.</div>
+      <div class="callout">Open this HTML file in a browser. Keep its local CSS, JS, SVG, and logo files. No build or external service is needed. GitHub's source viewer does not run the page.</div>
       <div class="next"><a href="#overview">Back to the graph</a><a href="#tools">Find tool use</a></div>
     </section>
 
@@ -273,7 +273,7 @@
       <p class="intro">Select a product to see its stages. Each stage states whether it is current or planned.</p>
       <p class="product-note">Some tools use text labels because this logo set has no approved mark for them. The OWASP mark identifies the ZAP project family.</p>
       <div id="tool-directory" class="tool-directory"></div>
-      <noscript><p>Tool names and uses are listed in the other areas. The logo use map needs JavaScript.</p></noscript>
+      <noscript><p>Tool names and uses are listed in the other areas. The logo use map needs scripting.</p></noscript>
       <p><a href="visuals/product-logos/README.md">Logo sources and license</a></p>
     </section>
 
@@ -312,7 +312,7 @@
         <dt>Severity</dt><dd>A rating of how serious a reported anomaly is.</dd>
         <dt>Allowlist</dt><dd>An explicit list of accepted exceptions. An entry does not fix the reported problem.</dd>
         <dt>Time budget</dt><dd>The maximum allowed test duration. It is not the measured duration.</dd>
-        <dt>UTF-16 code unit</dt><dd>A 16-bit value used by Java strings. One visible character can require several code units.</dd>
+        <dt>UTF-16 code unit</dt><dd>A 16-bit value used by .NET strings. One visible character can require several code units.</dd>
         <dt>Workflow</dt><dd>A GitHub Actions automation defined in YAML and triggered by an event.</dd>
         <dt>Runner</dt><dd>The machine that executes a GitHub Actions job.</dd>
         <dt>Job</dt><dd>A group of GitHub Actions steps that run on the same runner.</dd>

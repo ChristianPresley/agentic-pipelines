@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Builds the hello-api image and runs the E2E suite against it with WSL containers (wslc) instead of Docker.
+  Builds the hello-api image and runs the E2E suite against it with WSL containers (wslc).
 .PARAMETER Engine
   Container CLI to use. Defaults to wslc; pass "docker" to use Docker instead.
 #>
@@ -15,8 +15,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-if (-not $env:JAVA_HOME -and -not (Get-Command java -ErrorAction SilentlyContinue)) {
-    throw 'A JDK is required on the host to run the tests (set JAVA_HOME or add java to PATH).'
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+    throw 'The .NET SDK (see global.json) is required on the host to run the tests.'
 }
 
 $image = 'hello-api:e2e-local'
@@ -40,7 +40,7 @@ try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
         try {
-            Invoke-WebRequest "$url/actuator/health/readiness" -UseBasicParsing | Out-Null
+            Invoke-WebRequest "$url/health/ready" -UseBasicParsing | Out-Null
             $ready = $true
         } catch {
             $ready = $false
@@ -53,7 +53,7 @@ try {
     }
 
     $env:E2E_BASE_URL = $url
-    & .\mvnw.cmd -B test-compile failsafe:integration-test failsafe:verify '-Dit.test=HelloApiE2E'
+    & dotnet test tests/HelloApi.Tests/HelloApi.Tests.csproj --filter 'FullyQualifiedName~HelloApiE2ETests'
     if ($LASTEXITCODE -ne 0) { throw 'E2E tests failed' }
 } finally {
     $ErrorActionPreference = 'Continue'

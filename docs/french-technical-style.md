@@ -88,7 +88,7 @@ the first word when it starts a label or sentence.
 | allowlist | liste d’exceptions | Accepted exceptions; acceptance does not fix the reported problem. |
 | hash | empreinte de hachage | Identifies a commit or helps verify file contents. |
 | time budget | durée maximale | An allowed duration, not elapsed time. |
-| UTF-16 code unit | unité de code UTF-16 | Java length unit; not necessarily one visible character. |
+| UTF-16 code unit | unité de code UTF-16 | .NET string length unit (UTF-16); not necessarily one visible character. |
 | CI/CD | CI/CD | Intégration continue et livraison continue in this guide. |
 
 The compact diagram form **contrôle qualité** is allowed for quality and

@@ -228,7 +228,7 @@ def search_index() -> str:
 
 EXPLORER_AREAS = [
     ("overview", "Overview", "Vue d’ensemble"), ("source-build", "Source and build", "Source et build"),
-    ("java", "Java tests", "Tests Java"), ("api", "API tests", "Tests d’API"), ("workflows", "Workflow tests", "Tests de workflows"),
+    ("dotnet", ".NET tests", "Tests .NET"), ("api", "API tests", "Tests d’API"), ("workflows", "Workflow tests", "Tests de workflows"),
     ("evidence", "Test records", "Enregistrements de tests"), ("gates", "Quality gates", "Contrôles qualité"),
     ("release", "Release", "Publication"), ("feedback", "Review and reuse", "Revue et réutilisation"),
     ("reports", "Reports", "Rapports"), ("tools", "Tools and logos", "Outils et logos"),
@@ -631,8 +631,8 @@ AGENTS = {
         "Dispatched by the Release workflow after publication. Prepends a Highlights section to the GitHub Release notes.",
         "Déclenché par le workflow Release après la publication. Ajoute une section Highlights en tête des notes de la version GitHub."),
     "security-remediation": (
-        "Run manually with a <code>security-finding</code> issue number. Implements a minimal fix with tests, verifies it with Maven and opens a pull request that closes the issue.",
-        "Exécuté manuellement avec le numéro d’un ticket <code>security-finding</code>. Implémente un correctif minimal accompagné de tests, le vérifie avec Maven et ouvre une pull request qui ferme le ticket."),
+        "Run manually with a <code>security-finding</code> issue number. Implements a minimal fix with tests, verifies it with <code>dotnet test</code> and opens a pull request that closes the issue.",
+        "Exécuté manuellement avec le numéro d’un ticket <code>security-finding</code>. Implémente un correctif minimal accompagné de tests, le vérifie avec <code>dotnet test</code> et ouvre une pull request qui ferme le ticket."),
     "pipeline-failure-analyst": (
         "Runs when CI, E2E, Container or Release fails on <code>main</code> or on a tag (not on pull requests). Classifies the root cause and opens one deduplicated <code>pipeline-failure</code> issue, or comments on the existing one.",
         "S’exécute lorsque CI, E2E, Container ou Release échoue sur <code>main</code> ou sur un tag (pas sur les pull requests). Classe la cause racine et ouvre un seul ticket <code>pipeline-failure</code> dédupliqué, ou commente le ticket existant."),
@@ -677,7 +677,7 @@ AGENTIC_VISUALS = {
     [
      "Fixing",
      "A person writes the fix, tests it and opens the pull request.",
-     "A person starts the remediation agent. It makes the smallest fix and a test, runs ./mvnw verify and opens one pull request."
+     "A person starts the remediation agent. It makes the smallest fix and a test, runs dotnet test and opens one pull request."
     ],
     [
      "Release decision",
@@ -746,7 +746,7 @@ AGENTIC_VISUALS = {
     [
      "Corriger",
      "Une personne écrit le correctif, le teste et ouvre la pull request.",
-     "Une personne lance l’agent de correction. Il fait le plus petit correctif et un test, exécute ./mvnw verify et ouvre une pull request."
+     "Une personne lance l’agent de correction. Il fait le plus petit correctif et un test, exécute dotnet test et ouvre une pull request."
     ],
     [
      "Décision de publication",
@@ -814,7 +814,7 @@ AGENTIC_VISUALS = {
       "Dedupe against open and closed issues",
       "Collect commits, runs and open findings",
       "Validate tag and issue numbers",
-      "Warm a Maven cache (remediation)"
+      "Warm a NuGet cache (remediation)"
      ]
     ],
     [
@@ -892,7 +892,7 @@ AGENTIC_VISUALS = {
       "Dédoublonnage avec les tickets ouverts et fermés",
       "Collecte des commits, exécutions et anomalies",
       "Validation des numéros de tag et de ticket",
-      "Cache Maven préparé (correction)"
+      "Cache NuGet préparé (correction)"
      ]
     ],
     [
@@ -1037,12 +1037,12 @@ def release_page() -> str:
 <ol>
 <li><strong>Validate</strong>: semver tag, commit on <code>main</code>, no existing release.</li>
 <li><strong>Gates</strong>: CI, SAST, SCA, Secrets and IaC, Container, DAST and Fuzzing passed for the tagged commit. No open <code>security-finding</code> issue labelled <code>severity:critical</code> or <code>severity:high</code>.</li>
-<li><strong>Build</strong> with the version from the tag, full <code>mvn verify</code>, SHA-512 sums and a CycloneDX SBOM.</li>
+<li><strong>Build</strong> with the version from the tag, full <code>dotnet test</code>, SHA-512 sums and a CycloneDX SBOM.</li>
 <li><strong>E2E</strong> against the image built from the tag.</li>
 <li><strong>Readiness agent</strong> posts a GO / NO-GO issue while the run waits.</li>
 <li><strong>Approval</strong>: the <code>production</code> environment requires a reviewer and allows only <code>v*</code> tags.</li>
-<li><strong>Publish</strong>: image to GHCR with Cosign keyless signature, SLSA provenance and SBOM attestations. Maven package to GitHub Packages.</li>
-<li><strong>GitHub Release</strong> with the jar, <code>SHA512SUMS</code> and the SBOM. The release-notes agent then adds Highlights.</li>
+<li><strong>Publish</strong>: image to GHCR with Cosign keyless signature, SLSA provenance and SBOM attestations. NuGet package to GitHub Packages.</li>
+<li><strong>GitHub Release</strong> with the release archive, <code>SHA512SUMS</code> and the SBOM. The release-notes agent then adds Highlights.</li>
 </ol>
 <pre><code>git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z</code></pre>
@@ -1051,12 +1051,12 @@ git push origin vX.Y.Z</code></pre>
 <ol>
 <li><strong>Validation</strong> : tag semver, commit sur <code>main</code>, aucune version publiée existante.</li>
 <li><strong>Contrôles</strong> : CI, SAST, SCA, Secrets and IaC, Container, DAST et Fuzzing ont réussi pour le commit du tag. Aucun ticket <code>security-finding</code> ouvert n’a l’étiquette <code>severity:critical</code> ou <code>severity:high</code>.</li>
-<li><strong>Compilation</strong> avec la version issue du tag, <code>mvn verify</code> complet, sommes SHA-512 et SBOM CycloneDX.</li>
+<li><strong>Compilation</strong> avec la version issue du tag, <code>dotnet test</code> complet, sommes SHA-512 et SBOM CycloneDX.</li>
 <li><strong>E2E</strong> sur l’image construite à partir du tag.</li>
 <li><strong>Agent de préparation</strong> : il publie un ticket GO / NO-GO pendant que l’exécution attend.</li>
 <li><strong>Approbation</strong> : l’environnement <code>production</code> exige un relecteur et n’autorise que les tags <code>v*</code>.</li>
-<li><strong>Publication</strong> : image dans GHCR avec signature Cosign sans clé, provenance SLSA et attestations SBOM. Package Maven dans GitHub Packages.</li>
-<li><strong>Version GitHub</strong> avec le jar, <code>SHA512SUMS</code> et le SBOM. L’agent release-notes ajoute ensuite les Highlights.</li>
+<li><strong>Publication</strong> : image dans GHCR avec signature Cosign sans clé, provenance SLSA et attestations SBOM. Package NuGet dans GitHub Packages.</li>
+<li><strong>Version GitHub</strong> avec l&rsquo;archive de version, <code>SHA512SUMS</code> et le SBOM. L’agent release-notes ajoute ensuite les Highlights.</li>
 </ol>
 <pre><code>git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z</code></pre>
@@ -1079,8 +1079,10 @@ def setup_page() -> str:
 <li>Enable code scanning and Dependabot alerts. Add branch protection that requires CI, SAST, SCA, Secrets and IaC.</li>
 <li>Pages: set the source to <strong>GitHub Actions</strong> (Settings, Pages). The <code>Pages</code> workflow then publishes this site.</li>
 </ol>
-<pre><code>./mvnw verify            # tests, coverage, Checkstyle, PMD, SpotBugs
-./mvnw verify -Pmutation # adds PIT</code></pre>"""
+<pre><code>dotnet build -warnaserror   # Roslyn analyzers
+dotnet format --verify-no-changes
+dotnet test --collect:"XPlat Code Coverage"   # coverlet
+dotnet stryker              # mutation (Stryker.NET)</code></pre>"""
     fr = """<ol>
 <li>Installez la CLI : <code>gh extension install github/gh-aw</code>. Exécutez <code>gh aw compile</code> après chaque modification d’un workflow <code>.md</code>.</li>
 <li>Authentification Copilot : les workflows agentiques déclarent <code>copilot-requests: write</code>. L’inférence utilise donc le jeton Actions lorsque le propriétaire a un forfait Copilot avec facturation centralisée. Sinon, supprimez cette autorisation et définissez <code>COPILOT_GITHUB_TOKEN</code>.</li>
@@ -1090,8 +1092,10 @@ def setup_page() -> str:
 <li>Activez l’analyse du code et les alertes Dependabot. Ajoutez une protection de branche qui exige CI, SAST, SCA, Secrets and IaC.</li>
 <li>Pages : définissez la source sur <strong>GitHub Actions</strong> (Settings, Pages). Le workflow <code>Pages</code> publie ensuite ce site.</li>
 </ol>
-<pre><code>./mvnw verify            # tests, coverage, Checkstyle, PMD, SpotBugs
-./mvnw verify -Pmutation # adds PIT</code></pre>"""
+<pre><code>dotnet build -warnaserror   # Roslyn analyzers
+dotnet format --verify-no-changes
+dotnet test --collect:"XPlat Code Coverage"   # coverlet
+dotnet stryker              # mutation (Stryker.NET)</code></pre>"""
     body = h2("Repository setup", "Configuration du dépôt") + bblock(en, fr)
     return layout("setup/index.html", "setup", "Setup", "Configuration", ("Setup", "Configuration"), None, body)
 
@@ -1122,14 +1126,14 @@ def home_page(wfs: list[Workflow]) -> str:
         f'<span class="card-go" aria-hidden="true">{bi("Open", "Ouvrir")} &rarr;</span></li>'
         for href, en, fr, den, dfr in cards)
     body = bblock(
-        "<p>A Java 21 / Spring Boot REST API wrapped in a security pipeline of open-source scanners. GitHub Agentic Workflows read the results and open deduplicated issues, comments and discussions.</p>",
-        "<p>Une API REST Java 21 / Spring Boot entourée d’un pipeline de sécurité composé d’analyseurs open source. Les GitHub Agentic Workflows lisent les résultats et ouvrent des tickets, des commentaires et des discussions dédupliqués.</p>")
+        "<p>A .NET 11 / ASP.NET Core minimal API (run in WSLC containers locally) wrapped in a security pipeline of open-source scanners. GitHub Agentic Workflows read the results and open deduplicated issues, comments and discussions.</p>",
+        "<p>Une API minimale .NET 11 / ASP.NET Core (exécutée localement dans des conteneurs WSLC) entourée d’un pipeline de sécurité composé d’analyseurs open source. Les GitHub Agentic Workflows lisent les résultats et ouvrent des tickets, des commentaires et des discussions dédupliqués.</p>")
     body += stat_strip(workflow_stats(wfs), "workflows/")
     body += f'<ul class="card-grid">{items}</ul>'
     return layout("index.html", "home", "Agentic security pipeline", "Pipeline de sécurité agentique",
                   ("Documentation", "Documentation"),
-                  ("Scanners, agents and releases for a Java service, with the design and workflow reference.",
-                   "Analyseurs, agents et publications pour un service Java, avec la conception et la référence des workflows."),
+                  ("Scanners, agents and releases for a .NET service, with the design and workflow reference.",
+                   "Analyseurs, agents et publications pour un service .NET, avec la conception et la référence des workflows."),
                   body)
 
 

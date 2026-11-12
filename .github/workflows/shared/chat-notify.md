@@ -3,7 +3,7 @@ safe-outputs:
   jobs:
     slack-notify:
       description: "Post a short security summary to Slack (mrkdwn: *bold*, <url|text>, no tables)."
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-26.04
       output: "Slack notification sent"
       inputs:
         message:
@@ -22,7 +22,7 @@ safe-outputs:
             curl -fsS --retry 3 -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$SLACK_WEBHOOK_URL"
     teams-notify:
       description: "Post a short security summary to Microsoft Teams (Markdown subset; use blank lines between paragraphs)."
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-26.04
       output: "Teams notification sent"
       inputs:
         title:

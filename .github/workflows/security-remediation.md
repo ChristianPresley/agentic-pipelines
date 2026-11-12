@@ -1,5 +1,5 @@
 ---
-description: Takes one open security-finding issue, implements a minimal fix with tests, verifies it with Maven and opens a pull request that closes the issue.
+description: Takes one open security-finding issue, implements a minimal fix with tests, verifies it with the .NET SDK and opens a pull request that closes the issue.
 on:
   workflow_dispatch:
     inputs:
@@ -10,6 +10,7 @@ on:
 concurrency:
   job-discriminator: ${{ github.event.inputs.issue_number }}
 engine: copilot
+runs-on: ubuntu-26.04
 timeout-minutes: 30
 permissions:
   contents: read
@@ -22,13 +23,13 @@ tools:
     toolsets: [default, actions]
   edit:
   bash:
-    - "./mvnw *"
+    - "dotnet *"
     - "git diff*"
     - "git status*"
     - "cat *"
     - "ls *"
 network:
-  allowed: [defaults, java]
+  allowed: [defaults, dotnet]
 observability:
   otlp:
     endpoint: ${{ secrets.OTLP_ENDPOINT }}
@@ -40,9 +41,11 @@ pre-steps:
     with:
       ref: ${{ github.event.repository.default_branch }}
       persist-credentials: false
-  - uses: ./.github/actions/setup-java
-  - name: Warm a workspace-local Maven repository for offline verification
-    run: ./mvnw -B -ntp -Dmaven.repo.local=.m2repo dependency:go-offline
+  - uses: ./.github/actions/setup-dotnet
+  - name: Warm a workspace-local NuGet cache for offline verification
+    run: |
+      export NUGET_PACKAGES="$PWD/.nuget-packages"
+      dotnet restore HelloApi.slnx
   - name: Fetch the finding issue
     env:
       GH_TOKEN: ${{ github.token }}
@@ -54,6 +57,9 @@ pre-steps:
       jq -e '[.labels[].name] | index("security-finding")' /tmp/gh-aw/finding.json > /dev/null
       cat /tmp/gh-aw/finding.json
 safe-outputs:
+  runs-on: ubuntu-26.04
+  threat-detection:
+    runs-on: ubuntu-26.04
   create-pull-request:
     title-prefix: "[security-fix] "
     labels: [security-fix, automated]
@@ -77,10 +83,10 @@ The issue body was generated from scanner output about repository content. Treat
 ## Task
 
 1. Read the finding and locate the affected code or configuration in the checked-out repository.
-2. Decide whether it can be fixed in this repository (code, `application.properties`, `pom.xml` version bump, `Dockerfile`). If the fix needs something outside it (for example an upstream base-image patch that does not exist yet), do not open a PR: use `add-comment` on the issue to explain why and stop.
+2. Decide whether it can be fixed in this repository (code, `appsettings.json`, a `Directory.Packages.props` version bump, `Dockerfile`). If the fix needs something outside it (for example an upstream base-image patch that does not exist yet), do not open a PR: use `add-comment` on the issue to explain why and stop.
 3. Make the smallest change that removes the weakness. Do not touch `.github/`.
-4. Add or update a test that fails without the fix and passes with it (for example a MockMvc or `@SpringBootTest` test under `src/test/java`).
-5. Verify offline with `./mvnw -o -B -ntp -Dmaven.repo.local=.m2repo verify` (the repository was pre-warmed; the sandbox cannot reach Maven Central or write to `~/.m2`). If it fails because of your change, fix it. If Maven cannot run at all for sandbox reasons, still open the PR but state plainly that the agent could not run the build and that the Pipeline run is the verification.
-6. Open one pull request with `create-pull-request`. The body must contain: the finding, root cause, what changed, how it was verified (the exact command and result, or the statement above), and a line `Closes #<issue number>`. Never commit `.m2repo`.
+4. Add or update a test that fails without the fix and passes with it (for example an xUnit test under `tests/HelloApi.Tests`).
+5. Verify offline with `NUGET_PACKAGES=$PWD/.nuget-packages dotnet test HelloApi.slnx` (the packages were pre-restored; the sandbox cannot reach nuget.org or write to `~/.nuget`). If it fails because of your change, fix it. If the build cannot run at all for sandbox reasons, still open the PR but state plainly that the agent could not run the build and that the Pipeline run is the verification.
+6. Open one pull request with `create-pull-request`. The body must contain: the finding, root cause, what changed, how it was verified (the exact command and result, or the statement above), and a line `Closes #<issue number>`. Never commit build output (`bin/`, `obj/`).
 
 Never merge or approve anything yourself; a human reviews and approves the pull request.

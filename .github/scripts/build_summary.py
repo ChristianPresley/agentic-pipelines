@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render a Markdown build summary (tests, coverage, mutation score) for $GITHUB_STEP_SUMMARY."""
+"""Render a Markdown build summary (TRX tests, Cobertura coverage, Stryker mutation score) for $GITHUB_STEP_SUMMARY."""
 
 from __future__ import annotations
 
@@ -11,46 +11,57 @@ from pathlib import Path
 from security_report import parse_xml
 
 
+def local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
 def tests(root: Path) -> dict:
     totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0, "time": 0.0}
     failed = []
-    for path in list(root.glob("surefire-reports/TEST-*.xml")) + list(root.glob("failsafe-reports/TEST-*.xml")):
-        suite = parse_xml(path)
-        for key in ("tests", "failures", "errors", "skipped"):
-            totals[key] += int(suite.get(key, 0))
-        totals["time"] += float(suite.get("time", 0))
-        for case in suite.iter("testcase"):
-            if case.find("failure") is not None or case.find("error") is not None:
-                failed.append(f"{case.get('classname')}.{case.get('name')}")
+    for path in root.rglob("*.trx"):
+        for node in parse_xml(path).iter():
+            tag = local(node.tag)
+            if tag == "Counters":
+                totals["tests"] += int(node.get("total", 0))
+                totals["failures"] += int(node.get("failed", 0))
+                totals["errors"] += int(node.get("error", 0)) + int(node.get("timeout", 0)) + int(node.get("aborted", 0))
+                totals["skipped"] += int(node.get("notExecuted", 0))
+            elif tag == "UnitTestResult":
+                if node.get("outcome") == "Failed":
+                    failed.append(node.get("testName", "unknown"))
+                h, m, s = (node.get("duration") or "0:0:0").split(":")[:3]
+                totals["time"] += int(h) * 3600 + int(m) * 60 + float(s)
     totals["failed_names"] = failed
     return totals
 
 
 def coverage(root: Path) -> dict:
-    report = root / "site" / "jacoco" / "jacoco.xml"
-    if not report.exists():
-        return {}
     result = {}
-    for counter in parse_xml(report).findall("counter"):
-        covered, missed = int(counter.get("covered")), int(counter.get("missed"))
-        total = covered + missed
-        result[counter.get("type")] = (covered, total, 100.0 * covered / total if total else 100.0)
+    for report in root.rglob("coverage.cobertura.xml"):
+        node = parse_xml(report)
+        for key, attribute in (("LINE", "line-rate"), ("BRANCH", "branch-rate")):
+            if node.get(attribute) is not None:
+                pct = 100.0 * float(node.get(attribute))
+                result[key] = (0, 0, pct)
     return result
 
 
 def mutation(root: Path) -> tuple[int, int] | None:
-    report = root / "pit-reports" / "mutations.xml"
-    if not report.exists():
+    reports = list(root.rglob("mutation-report.json"))
+    if not reports:
         return None
     killed = total = 0
-    for node in parse_xml(report).iter("mutation"):
-        total += 1
-        killed += node.get("status") == "KILLED"
+    for report in reports:
+        for file_report in json.loads(report.read_text(encoding="utf-8")).get("files", {}).values():
+            for mutant in file_report.get("mutants", []):
+                if mutant.get("status") in ("Ignored", "CompileError"):
+                    continue
+                total += 1
+                killed += mutant.get("status") in ("Killed", "Timeout")
     return killed, total
 
-
 def main() -> int:
-    target = Path(sys.argv[1] if len(sys.argv) > 1 else "target")
+    target = Path(sys.argv[1] if len(sys.argv) > 1 else "artifacts")
     t, c, m = tests(target), coverage(target), mutation(target)
     lines = ["## Build summary", ""]
     status = "✅" if not (t["failures"] or t["errors"]) else "❌"
@@ -60,7 +71,7 @@ def main() -> int:
     for key, label in (("LINE", "Line coverage"), ("BRANCH", "Branch coverage")):
         if key in c:
             covered, total, pct = c[key]
-            lines.append(f"| 📊 {label} | {pct:.1f}% ({covered}/{total}) |")
+            lines.append(f"| 📊 {label} | {pct:.1f}% |")
     if m:
         pct = 100.0 * m[0] / m[1] if m[1] else 100.0
         lines.append(f"| 🧬 Mutation score | {pct:.1f}% ({m[0]}/{m[1]} killed) |")
