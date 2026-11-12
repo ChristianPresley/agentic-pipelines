@@ -109,7 +109,7 @@ into the oracle: use output invariants, fixed boundary examples, and metamorphic
 relations. A direct-string target is needed because UTF-8 byte decoding cannot
 represent every .NET string, including isolated surrogates.
 
-Use the existing test corpus convention supported by the pinned Jazzer version.
+Use the existing test corpus convention supported by the pinned fuzzer version.
 Explicitly configure and verify the generated-corpus location before caching it;
 do not assume `.cifuzz-corpus` is automatically populated. Record both requested
 and effective duration, target selection, regression/fuzz mode, and engine
@@ -323,7 +323,7 @@ diagram without an explicit legend.
 No phase below was implemented by this documentation change.
 
 1. **Evidence first:** add manifests and strict completeness checks around
-   existing runners/normalizers. Fix mode labels and verify effective Jazzer
+   existing runners/normalizers. Fix mode labels and verify effective fuzzer
    duration/corpus behavior. Preserve schema-1 consumers.
 2. **Application oracles:** add the .NET/string and HTTP boundaries, retain the
    existing 400 behavior, and document intended responses in OpenAPI. Promote

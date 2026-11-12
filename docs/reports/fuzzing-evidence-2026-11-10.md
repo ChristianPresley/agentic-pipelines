@@ -15,7 +15,7 @@ as deployed capabilities here.
 | ID | Evidence and identity | Used for |
 |---|---|---|
 | E1 | [Fuzzing run 42732777125](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125), push, attempt 1, baseline SHA | Dedicated regression result and cache log |
-| E2 | [Jazzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `jazzer-results` | Surefire XML: one test, 7.893 s |
+| E2 | [fuzzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `fuzz-results` | Surefire XML: one test, 7.893 s |
 | E3 | [Findings artifact 13724974274](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13724974274), `findings-fuzz` | Schema 1; no findings, no blocking records |
 | E4 | [DAST run 42732776744](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744), push, attempt 1, baseline SHA | API fuzzing and DAST outcome |
 | E5 | [Schemathesis artifact 13724734696](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744/artifacts/13724734696), `schemathesis-results` | ST103 operation-level failure and request |
@@ -69,11 +69,11 @@ with no surviving/no-coverage records in this sample. The
 The build summary's `mutation: null` belongs to the separate build job, not proof
 that the separate mutation job did not run.
 
-### Effective Jazzer mode and persistence
+### Effective fuzzer mode and persistence
 
 E1 is a push run. The [workflow shell branch](../../.github/workflows/fuzz.yml)
 executes regression on both PR and push. Its job-name expression labels only PRs
-as regression, hence E1's misleading `Jazzer (fuzzing)` label.
+as regression, hence E1's misleading `fuzzer (fuzzing)` label.
 
 The E1 log records:
 
@@ -258,7 +258,7 @@ dispatches Release rather than relying on token-generated tag events.
 |---|---|---|
 | .NET setup -> .NET jobs | [Composite action](../../.github/actions/setup-dotnet/action.yml), CI/Fuzzing/DAST/E2E and scanner builds | .NET 11 SDK, NuGet package cache |
 | CI -> test/coverage/mutation artifacts | [CI](../../.github/workflows/ci.yml), [build summary](../../.github/scripts/build_summary.py) | CI emits build reports, **not** `findings-ci` |
-| Jazzer -> raw -> findings | [Fuzzing](../../.github/workflows/fuzz.yml), [normalizer](../../.github/scripts/security_report.py) | High-severity JUnit failures; summary always runs |
+| fuzzer -> raw -> findings | [Fuzzing](../../.github/workflows/fuzz.yml), [normalizer](../../.github/scripts/security_report.py) | High-severity JUnit failures; summary always runs |
 | ZAP/Schemathesis -> raw -> findings | [DAST](../../.github/workflows/dast.yml), normalizer | Schemathesis JUnit mapped medium; ZAP risk mapping |
 | Static scanners -> findings | [SAST](../../.github/workflows/sast.yml), [SCA](../../.github/workflows/sca.yml), [Secrets and IaC](../../.github/workflows/secrets-iac.yml), [Container](../../.github/workflows/container.yml) | Six total normalized scanner producers including Fuzzing/DAST |
 | Seven scanner completions -> coordination | [Security Gate](../../.github/workflows/security-gate.yml) | Main push run metadata; coordination is not an all-success gate |
@@ -314,7 +314,7 @@ Source-derived test priorities, **not dynamically confirmed failures**:
   need dedicated tests before treating completion as complete evidence.
 - Release checks for any successful matching workflow in the queried push runs;
   cases with a newer failed run need an explicit selection policy and tests.
-- Current dedupe groups by tool/rule, and Jazzer rule IDs derive from testcase
+- Current dedupe groups by tool/rule, and fuzzer rule IDs derive from testcase
   names; different failures inside one target can need finer signatures.
 - Corpus cache naming alone does not establish that the engine reads/writes
   that directory.

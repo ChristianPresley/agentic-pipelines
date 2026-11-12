@@ -18,12 +18,12 @@ the original [application connection map](#application-connection-map) below.
 | Measure | Observed value | Interpretation |
 |---|---|---|
 | Workflows | 22 executable definitions: 15 standard, 6 compiled agentic, 1 generated maintenance | Six Markdown authoring files are not six additional executable workflows |
-| CI tests | 15 reported tests; 0 failures/errors/skips | Unit, property, Jazzer regression, controller, integration suites |
+| CI tests | 15 reported tests; 0 failures/errors/skips | Unit, property, fuzzer regression, controller, integration suites |
 | Property generation | 2 properties x 1,000 successful checks | 2,000 checks, not 2,000 JUnit methods |
 | Application line coverage | 20/22 = 90.91% | Aggregate CI coverlet; not fuzz-only coverage |
 | Application branch coverage | 16/18 = 88.89% | Both missed branches are in `GreetingService` |
 | .NET mutation controls | 17/17 killed = 100% | Stryker.NET scope excludes fuzz/property/IT test classes |
-| Dedicated Jazzer result | 1 regression invocation; 0 failures/errors/skips | Push event executed regression, despite the job's "fuzzing" label |
+| Dedicated fuzzer result | 1 regression invocation; 0 failures/errors/skips | Push event executed regression, despite the job's "fuzzing" label |
 | Corpus persistence | Cache miss; cache save warned that path did not exist | Sampled result does not establish reusable corpus persistence |
 | API contract fuzzing | 1 operation result, 1 failure, 0 errors/skips | Schemathesis ST103: actual 400, OpenAPI documented only 200 |
 | DAST normalized records | 10: 2 medium, 2 low, 6 info; 0 blocking | Includes 1 Schemathesis and 9 ZAP records; not 10 confirmed vulnerabilities |
@@ -38,7 +38,7 @@ the original [application connection map](#application-connection-map) below.
    400 is already intended behavior; the reported mismatch is documentation/
    contract consistency, not evidence that validation should be removed.
 2. **Execution labels are not trustworthy measurements.** Main pushes select
-   Jazzer regression in the shell branch. The current label calls this
+   fuzzer regression in the shell branch. The current label calls this
    "fuzzing." The last five fetched Fuzzing runs were all PR/push events; none
    provides measured scheduled coverage-guided fuzzing throughput.
 3. **Workflow correctness needs its own lane.** Event ordering, missing reports,
@@ -56,7 +56,7 @@ This diagram describes existing application calls and test coverage paths.
 flowchart LR
   subgraph DotnetIn[".NET inputs"]
     direction TB
-    Bytes["Jazzer byte input"] --> Decode["UTF-8 decode"]
+    Bytes["fuzzer byte input"] --> Decode["UTF-8 decode"]
     Strings["FsCheck strings / unit cases"]
     Unit["Unit shout case"] --> Shout["shout<br/>Locale.ROOT uppercase"]
   end
