@@ -30,8 +30,8 @@ public class HelloApiTests(WebApplicationFactory<Program> factory) : IClassFixtu
     }
 
     [Theory]
-    [InlineData("/actuator/health/liveness")]
-    [InlineData("/actuator/health/readiness")]
+    [InlineData("/health/live")]
+    [InlineData("/health/ready")]
     [InlineData("/v3/api-docs")]
     public async Task ExposesOperationalEndpoints(string path)
     {

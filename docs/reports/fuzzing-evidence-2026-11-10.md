@@ -15,7 +15,7 @@ as deployed capabilities here.
 | ID | Evidence and identity | Used for |
 |---|---|---|
 | E1 | [Fuzzing run 42732777125](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125), push, attempt 1, baseline SHA | Dedicated regression result and cache log |
-| E2 | [fuzzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `fuzz-results` | Surefire XML: one test, 7.893 s |
+| E2 | [fuzzer artifact 13725202648](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13725202648), `fuzz-results` | Test-result XML: one test, 7.893 s |
 | E3 | [Findings artifact 13724974274](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732777125/artifacts/13724974274), `findings-fuzz` | Schema 1; no findings, no blocking records |
 | E4 | [DAST run 42732776744](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744), push, attempt 1, baseline SHA | API fuzzing and DAST outcome |
 | E5 | [Schemathesis artifact 13724734696](https://github.com/ChristianPresley/agentic-pipelines/actions/runs/42732776744/artifacts/13724734696), `schemathesis-results` | ST103 operation-level failure and request |
@@ -51,7 +51,7 @@ Relative source links navigate the current checkout.
 | **CI total** | **15** | **0 / 0 / 0** | **21.037** | E8 |
 | GreetingServiceFuzzTest (dedicated workflow) | 1 | 0 / 0 / 0 | 7.893 | E2; not added to CI total |
 
-Suite time is the JUnit-reported duration, not engine fuzzing time or runner cost.
+Suite time is the test-runner-reported duration, not engine fuzzing time or runner cost.
 The CI property XML records 1,000 checks per property:
 
 - `greetingNeverNullAndAlwaysWellFormed`: seed `8963026254894808161`.
@@ -63,7 +63,7 @@ code, and generator configuration.
 coverlet E8 records 20 covered / 22 total lines and 16 covered / 18 total branches.
 `GreetingService` has 12/12 covered lines and 16/18 covered branches.
 `HelloApplication` accounts for the two missed lines. This does not isolate
-coverage contributed by fuzzing. E9 records 17 KILLED out of 17 PIT mutations,
+coverage contributed by fuzzing. E9 records 17 killed out of 17 mutations,
 with no surviving/no-coverage records in this sample. The
 [mutation profile](../../stryker-config.json) excludes fuzz, property, and `*IT` test classes.
 The build summary's `mutation: null` belongs to the separate build job, not proof
@@ -82,7 +82,7 @@ The E1 log records:
 - Cache miss for the run key and fallback prefix.
 - Cache path validation warning: configured path did not exist; no cache saved.
 
-E2 contains Surefire reports only, not a corpus or crash input. The reviewed test
+E2 contains test-result reports only, not a corpus or crash input. The reviewed test
 resources contained no corpus files. This is evidence of missing persistence in
 the sampled regression run, **not** proof that every scheduled run loses corpus.
 
@@ -124,7 +124,7 @@ are consistent with the current configuration.
 | E6 record class | Count | Interpretation |
 |---|---:|---|
 | Schemathesis medium | 1 | ST103 contract discrepancy |
-| ZAP medium | 1 | Scanner-reported framework actuator-style information leak; not independently confirmed |
+| ZAP medium | 1 | Scanner-reported framework health-endpoint information leak; not independently confirmed |
 | ZAP low | 2 | Cross-Origin-Resource-Policy and X-Content-Type-Options headers |
 | ZAP info | 6 | Client errors, four fetch-metadata header records, cacheability |
 | Critical / high / suppressed / blocking | 0 / 0 / 0 / 0 | Current normalized output, not proof of no defects |

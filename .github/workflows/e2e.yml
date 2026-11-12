@@ -57,7 +57,7 @@ jobs:
         run: |
           docker run -d --name hello-api --cap-drop ALL --security-opt no-new-privileges -p 8080:8080 "$IMAGE_LOCAL"
           for _ in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null; then
+            if curl -fsS http://localhost:8080/health/ready > /dev/null; then
               echo "Container is ready"
               exit 0
             fi

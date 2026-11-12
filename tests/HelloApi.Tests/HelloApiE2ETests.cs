@@ -39,8 +39,8 @@ public class HelloApiE2ETests
     }
 
     [Theory]
-    [InlineData("/actuator/health/liveness")]
-    [InlineData("/actuator/health/readiness")]
+    [InlineData("/health/live")]
+    [InlineData("/health/ready")]
     [InlineData("/v3/api-docs")]
     public async Task ExposesOperationalEndpoints(string path)
     {

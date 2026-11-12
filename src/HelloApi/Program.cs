@@ -21,9 +21,9 @@ app.MapGet("/api/hello", (string? name, GreetingService service) =>
     .WithTags("hello")
     .WithSummary("Say hello");
 
-app.MapHealthChecks("/actuator/health");
-app.MapHealthChecks("/actuator/health/readiness");
-app.MapHealthChecks("/actuator/health/liveness");
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready");
+app.MapHealthChecks("/health/live");
 
 await app.RunAsync();
 

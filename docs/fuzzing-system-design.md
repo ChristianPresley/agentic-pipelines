@@ -74,11 +74,11 @@ flowchart TB
 | Lane | Real target | Generation | Oracle | Output |
 |---|---|---|---|---|
 | .NET | `sanitize`, `greet`, `shout` | Coverage-guided bytes, direct UTF-16 strings, FsCheck properties | Independent contract properties, exceptions, bounded work | xUnit, native engine statistics, minimized inputs |
-| HTTP | Request decoding, validation, JSON, error mapping, published OpenAPI | Schema-derived and explicit boundary requests | Status/schema consistency, response semantics, no unexpected 5xx | JUnit plus sanitized request/response replay |
+| HTTP | Request decoding, validation, JSON, error mapping, published OpenAPI | Schema-derived and explicit boundary requests | Status/schema consistency, response semantics, no unexpected 5xx | Test-runner results plus sanitized request/response replay |
 | Workflow | YAML/frontmatter, event routing, shell adapters, scanner ingestion, gates, dedupe, rendering | Structured configuration mutations, event sequences, corrupted reports | Expected decisions, parser robustness, command trace, known-mutant detection | Case-level results, graph, fixture, replay manifest |
 
 Coverage in one lane is not coverage in another. ZAP remains complementary DAST,
-not a substitute for application or workflow fuzzing. PIT measures test
+not a substitute for application or workflow fuzzing. Stryker.NET measures test
 effectiveness, not random-input throughput.
 
 ## 2. .NET and HTTP target contracts
@@ -113,7 +113,7 @@ Use the existing test corpus convention supported by the pinned fuzzer version.
 Explicitly configure and verify the generated-corpus location before caching it;
 do not assume `.cifuzz-corpus` is automatically populated. Record both requested
 and effective duration, target selection, regression/fuzz mode, and engine
-execution count. A JUnit invocation alone does not establish a fuzz campaign.
+execution count. A test-runner invocation alone does not establish a fuzz campaign.
 
 ## 3. Workflow fuzzing: what is actually exercised
 
@@ -206,7 +206,7 @@ do not silently change the current findings schema or its consumers.
 | Record | Required data |
 |---|---|
 | Identity | Schema version, repository, tested commit, workflow path, run ID and attempt, job/target ID, event, PR head and tested merge SHA when applicable |
-| Provenance | Harness/config revision, exact engine/compiler versions, action SHAs, tool artifact digests, application jar/image digest for HTTP |
+| Provenance | Harness/config revision, exact engine/compiler versions, action SHAs, tool artifact digests, application image digest for HTTP |
 | Campaign | Lane, target, requested/effective mode and budget, UTC timestamps, seed, limits, corpus input/output digest |
 | Execution | Generated/accepted/rejected cases, engine executions, FsCheck checks, request count, completion reason, exit status, resource usage |
 | Evidence health | Expected/received artifact list, parse status per file, schema validation, producer conclusion, missing/expired/corrupt reasons |
@@ -268,7 +268,7 @@ Maintain two separate dimensions:
 | Evidence health | Complete / Inconclusive / Skipped | Did every required target execute with valid evidence for this exact identity? |
 | Defect outcome | Clean / Failed / Unassessed | Were required oracles satisfied? Unassessed is not clean. |
 
-Overall pass requires **Complete + Clean**. Missing JUnit, zero selected tests,
+Overall pass requires **Complete + Clean**. Missing test results, zero selected tests,
 parse errors, wrong SHA, failed tool startup, missing required jobs, or expired
 artifacts cannot produce a pass. Intentional skips need a recorded reason and
 must not satisfy a required release check.
@@ -307,7 +307,7 @@ untrusted data; render escaped, bounded excerpts and approved links only.
 | Daily/weekly trend | Comparable campaigns only; unique signatures, recurrence, time to reproduce/fix, corpus growth, branch coverage, throughput and resource cost |
 
 Every reported metric needs numerator/denominator, units, scope, timestamp, and
-evidence ID. Show unknown as **not measured**, not zero. Never equate one JUnit
+evidence ID. Show unknown as **not measured**, not zero. Never equate one test-runner
 method with one generated input; never label a regression run "fuzzing"; never
 sum overlapping scanner records as unique vulnerabilities. Distinguish expected
 invalid fixtures, discovered failures, infrastructure errors, and suppressions.

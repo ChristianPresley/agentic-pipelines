@@ -134,7 +134,7 @@ are met.
 Collection still runs after failed lane jobs. Missing required output is
 inconclusive, not a clean campaign. Replay failures stay visible; reporting does
 not require a successful gate. Existing static/security scanning, lint, coverage,
-and PIT checks remain in place alongside the new fuzzing lanes.
+and Stryker.NET checks remain in place alongside the new fuzzing lanes.
 
 ### One pipeline, different campaign profiles
 
@@ -231,7 +231,7 @@ artifact provenance. This view changes navigation, not those results.
 | Reader's question | Pipeline stage | Detailed evidence |
 |---|---|---|
 | What revision was tested? | Source | Tested SHA, run, attempt, event |
-| Did it build and test? | Build / Test | JUnit, coverage, PIT, target results |
+| Did it build and test? | Build / Test | TRX, coverage, Stryker.NET, target results |
 | Did fuzzing actually execute? | Test / Collect | Effective mode, execution count, corpus state |
 | Can we trust the verdict? | Collect / Gate | Completeness, parser status, policy, suppressions |
 | Can this release proceed? | Release gates / Approval | Same-SHA scanner results and environment decision |

@@ -19,7 +19,7 @@ the original [application connection map](#application-connection-map) below.
 |---|---|---|
 | Workflows | 22 executable definitions: 15 standard, 6 compiled agentic, 1 generated maintenance | Six Markdown authoring files are not six additional executable workflows |
 | CI tests | 15 reported tests; 0 failures/errors/skips | Unit, property, fuzzer regression, controller, integration suites |
-| Property generation | 2 properties x 1,000 successful checks | 2,000 checks, not 2,000 JUnit methods |
+| Property generation | 2 properties x 1,000 successful checks | 2,000 checks, not 2,000 test methods |
 | Application line coverage | 20/22 = 90.91% | Aggregate CI coverlet; not fuzz-only coverage |
 | Application branch coverage | 16/18 = 88.89% | Both missed branches are in `GreetingService` |
 | .NET mutation controls | 17/17 killed = 100% | Stryker.NET scope excludes fuzz/property/IT test classes |
