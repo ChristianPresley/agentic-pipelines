@@ -15,9 +15,10 @@ permissions:
   issues: read
   security-events: read
 tools:
+  bash: ["cat", "ls", "find", "grep", "head", "tail", "wc"]
   github:
     toolsets: [default, code_security]
-    min-integrity: unapproved
+    min-integrity: none
 network: defaults
 observability:
   otlp:
