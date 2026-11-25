@@ -8,7 +8,7 @@ RUN dotnet restore src/HelloApi/HelloApi.csproj
 COPY src/HelloApi src/HelloApi
 RUN dotnet publish src/HelloApi/HelloApi.csproj -c Release --no-restore -o /out -p:Version="${VERSION}" -p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:11.0@sha256:bc0d6653979efba491ab3d6f589d691f96c309c3c3ef81325efa6978e7b7f242
+FROM mcr.microsoft.com/dotnet/aspnet:11.0@sha256:ca396ece3f2a2e62c7a03f1d7d710b8bc7e8c9dea5597d091178d9f5bfca13f0
 LABEL org.opencontainers.image.source="https://github.com/ChristianPresley/agentic-pipelines" \
       org.opencontainers.image.title="hello-api" \
       org.opencontainers.image.licenses="MIT"
